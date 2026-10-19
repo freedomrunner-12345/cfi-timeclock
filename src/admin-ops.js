@@ -73,6 +73,28 @@ export async function adminOps(store,request){
   store.audit('pto-reviewed',{requestId,employeeId:entry.user_id,status},'admin');
   return result({ok:true});
  }
+ if(route==='/api/admin/clear-week-punches'&&method==='POST'){
+  const data=await request.json();
+  const employeeId=String(data.employeeId??'').trim();
+  const targetWeek=String(data.week??'').trim();
+  const confirmation=String(data.confirmation??'');
+  if(confirmation!=='CLEAR')return error('Type CLEAR to confirm deletion');
+  if(!/^\d{1,12}$/.test(employeeId)||!/^\d{4}-\d{2}-\d{2}$/.test(targetWeek)||store.week(targetWeek)!==targetWeek)return error('Invalid employee or payroll week');
+  if(targetWeek>store.week(today))return error('Future payroll weeks cannot be cleared');
+  const employee=store.one('SELECT id,name FROM users WHERE id=?',employeeId);
+  if(!employee)return error('Employee not found',404);
+  const punches=punchesFor(store,employeeId,targetWeek);
+  if(!punches.length)return error('There are no punches to clear for this week',409);
+  // Preserve the original punch details in a restricted administrator audit record.
+  // Separate PTO, user profiles, and other payroll weeks are never modified.
+  const last=store.one('SELECT kind,at FROM punches WHERE user_id=? ORDER BY at DESC LIMIT 1',employeeId);
+  if(last?.kind==='IN' && punches.some(p=>p.at===last.at))return error('Employee is currently clocked in. Clock out before clearing punches',409);
+  store.audit('test-punches-cleared',{employeeId,employeeName:employee.name,week:targetWeek,count:punches.length,punches:punches.map(p=>({id:p.id,kind:p.kind,at:p.at,corrected_at:p.corrected_at}))},'admin');
+  for(const p of punches)store.db.exec('DELETE FROM punches WHERE id=? AND user_id=?',p.id,employeeId);
+  // Invalidate kiosk sessions so older employee screens must reload.
+  store.db.exec('DELETE FROM sessions WHERE user_id=?',employeeId);
+  return result({ok:true,deleted:punches.length,employeeId,week:targetWeek});
+ }
  if(route==='/api/admin/punch-edit'&&method==='POST'){
   const data=await request.json(),entry=store.one('SELECT id,user_id,kind,at FROM punches WHERE id=?',String(data.id||''));
   if(!entry)return error('Punch not found',404);
