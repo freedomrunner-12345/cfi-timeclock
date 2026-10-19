@@ -53,20 +53,48 @@ function editPreferredName(employee){
   }catch(err){alertUser(err.message);button.disabled=false;}
  };
 }
-function showCard(e){pop('<h2>'+safe(e.name)+'</h2><p class="muted">Week of '+displayDay(week)+' · Regular '+fix(e.totals.regularHours)+' · Overtime '+fix(e.totals.overtimeHours)+'</p>'+(e.totals.warnings.length?'<div class="warn">One or more shifts needs review before payroll.</div>':'')+e.totals.days.map(d=>'<h3 style="margin:23px 0 8px">'+displayDay(d.date)+' · '+fix(d.minutes/60)+' hours</h3>'+d.punches.map(p=>'<div class="day"><span>'+(p.kind==='IN'?'Clock In':'Clock Out')+' · '+time(p.at)+'</span><button class="btn outline" data-edit="'+safe(p.id)+'">Edit</button></div>').join('')+(d.lunchCredit?'<div class="sub">30-minute lunch credit included</div>':'')).join('')+'<div class="info">A correction changes the recorded time. All corrections are audit logged.</div>'+(e.punches.length?'<button class="btn outline" id="clearWeek" style="width:100%;color:#b81025;border-color:#edc6cb">Clear Test Punches For This Week</button>':''));$('overlay').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(e,b.dataset.edit));const clear=$('clearWeek');if(clear)clear.onclick=()=>clearWeekPunches(e)}
-function clearWeekPunches(e){
- const selectedWeek=week;
- const count=e.punches.length;
- pop('<h2>Clear Test Punches</h2><p class="muted">'+safe(e.name)+' · '+displayDay(selectedWeek)+' – '+displayDay(state.sunday)+'</p><div class="warn">This will clear <b>'+count+' recorded punches</b> for this employee and week. It does not clear PTO, employee accounts, or other weeks. A record of the deleted punches will be kept in the administrator audit log.</div><form id="clearForm"><label class="label" for="clearConfirmation">Type CLEAR to confirm</label><input class="input" id="clearConfirmation" name="confirmation" placeholder="CLEAR" autocomplete="off" spellcheck="false" required><button type="submit" id="clearSubmit" class="btn red" disabled style="width:100%">Clear '+count+' Punches</button></form>');
- const input=$('clearConfirmation'),button=$('clearSubmit');
- input.oninput=()=>{button.disabled=input.value!=='CLEAR'};
- $('clearForm').onsubmit=async event=>{
-  event.preventDefault();
-  if(input.value!=='CLEAR')return;
+function showCard(e){
+ const info='<h2>'+safe(e.name)+'</h2><p class="muted">Week of '+displayDay(week)+' · Regular '+fix(e.totals.regularHours)+' · Overtime '+fix(e.totals.overtimeHours)+'</p>';
+ const dates=e.totals.days.map(d=>'<h3 style="margin:23px 0 8px">'+displayDay(d.date)+' · '+fix(d.minutes/60)+' hours</h3>'
+ +d.punches.map(p=>'<div class="day"><span>'+(p.kind==='IN'?'Clock In':'Clock Out')+' · '+time(p.at)+'</span><div class="row"><button class="btn outline" data-edit="'+safe(p.id)+'">Edit</button><button class="btn outline" style="color:#b81025" data-delete="'+safe(p.id)+'">Delete</button></div></div>').join('')
+ +(d.lunchCredit?'<div class="sub">30-minute lunch credit included</div>':'')).join('');
+ pop(info+(e.totals.warnings.length?'<div class="warn">One or more shifts needs review before payroll.</div>':'')
+ +'<button class="btn red" id="addPunch" style="width:100%;margin:8px 0 15px">+ Add Missed Punch</button>'
+ +dates+'<div class="info">Adding, editing, or deleting punches changes recorded time. Each change is retained in the administrator audit log. PTO and other employees are not affected.</div>');
+ $('addPunch').onclick=()=>addPunch(e);
+ $('overlay').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(e,b.dataset.edit));
+ $('overlay').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deletePunch(e,b.dataset.delete));
+}
+function addPunch(employee){
+ pop('<h2>Add Missed Punch</h2><p class="muted">'+safe(employee.name)+' · Week of '+displayDay(week)+'</p><form id="addPunchForm"><label class="label" for="punchKind">Punch Type</label><select class="input" id="punchKind"><option value="IN">Clock In</option><option value="OUT">Clock Out</option></select><label class="label" for="punchAt">Date And Time (Central)</label><input class="input" type="datetime-local" id="punchAt" required><button class="btn red" type="submit">Add Punch</button></form><div class="info">This records an administrator-added punch. Original punch times are never silently modified.</div>');
+ $('punchAt').value=week+'T08:00';
+ $('addPunchForm').onsubmit=async ev=>{
+  ev.preventDefault();
+  const button=ev.currentTarget.querySelector('button');button.disabled=true;
+  try{
+   const at=parseCentral($('punchAt').value);
+   if(!at)throw Error('Enter a valid date and time');
+   const dayValue=$('punchAt').value.slice(0,10);
+   if(dayValue<week||dayValue>state.sunday)throw Error('Choose a date in the displayed payroll week');
+   if(!confirm('Add this '+($('punchKind').value==='IN'?'Clock In':'Clock Out')+' punch on '+dayValue+'?')){button.disabled=false;return}
+   await api('punch-add',{employeeId:employee.id,kind:$('punchKind').value,at});
+   hide();await refresh();alertUser('Missed Punch Added');
+  }catch(err){alertUser(err.message);button.disabled=false}
+ };
+}
+function deletePunch(employee,punchId){
+ const p=employee.punches.find(x=>x.id===punchId);
+ if(!p)return;
+ pop('<h2>Delete One Punch</h2><p class="muted">'+safe(employee.name)+'</p><div class="warn">You are deleting only this '+(p.kind==='IN'?'Clock In':'Clock Out')+' punch at '+time(p.at)+' on '+displayDay(central(p.at).slice(0,10))+'. This may leave an incomplete timecard until another correction is made. The original punch is preserved in the administrator audit log.</div><form id="deleteForm"><label class="label" for="deleteConfirmation">Type DELETE To Confirm</label><input class="input" id="deleteConfirmation" autocomplete="off" spellcheck="false" placeholder="DELETE" required><button class="btn red" type="submit" id="confirmDelete" disabled style="width:100%">Delete This Punch</button></form>');
+ const input=$('deleteConfirmation'),button=$('confirmDelete');
+ input.oninput=()=>{button.disabled=input.value!=='DELETE'};
+ $('deleteForm').onsubmit=async ev=>{
+  ev.preventDefault();
+  if(input.value!=='DELETE')return;
   button.disabled=true;
   try{
-   const response=await api('clear-week-punches',{employeeId:e.id,week:selectedWeek,confirmation:input.value});
-   hide();await refresh();alertUser(response.deleted+' Test Punches Cleared');
+   await api('punch-delete',{id:punchId,confirmation:input.value});
+   hide();await refresh();alertUser('Punch Deleted');
   }catch(err){alertUser(err.message);button.disabled=false}
  };
 }
