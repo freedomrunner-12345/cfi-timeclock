@@ -108,36 +108,16 @@ export class Timeclock {
         const origin = req.headers.get('Origin');
         if (origin && origin !== url.origin) return fail('Invalid origin', 403);
       }
-      const current = this.one('SELECT id FROM users WHERE id=?', ADMIN_ID);
-      if (route === '/api/config') return json({ setupRequired: !current, pilot: true });
-      if (route === '/api/setup' && req.method === 'POST') {
-        if (current) return fail('Setup is already complete', 409);
-        if (!this.env.BOOTSTRAP_SECRET || this.env.BOOTSTRAP_SECRET.length < 20) return fail('Add a strong BOOTSTRAP_SECRET in Cloudflare before setup', 503);
-        const data = await req.json();
-        const code = String(data.setupCode || '');
-        if (!same(await sha(code), await sha(this.env.BOOTSTRAP_SECRET))) return fail('Setup code incorrect', 403);
-        const id = String(data.id || '').trim();
-        const name = String(data.name || '').trim();
-        const pin = String(data.pin || '');
-        if (id !== ADMIN_ID) return fail('Only the pilot account is enabled', 403);
-        if (name.length < 2 || name.length > 80 || !/^\d{6,8}$/.test(pin)) return fail('Enter your name and a 6–8 digit PIN');
-        const salt = uid();
-        this.db.exec('INSERT INTO users (id,name,salt,pin_hash,created_at) VALUES (?,?,?,?,?)', id, name, salt, await pinHash(pin, salt), new Date().toISOString());
-        this.audit('account-created', { id });
-        return await this.newSession(id);
-      }
+      if (route === '/api/config') return json({ setupRequired: false, pilot: true });
       if (route === '/api/login' && req.method === 'POST') {
-        const cutoff = new Date(Date.now() - 15 * 60000).toISOString();
-        this.db.exec('DELETE FROM attempts WHERE at<?', cutoff);
-        if (this.one('SELECT COUNT(*) AS n FROM attempts')?.n >= 8) return fail('Too many attempts. Try again in 15 minutes.', 429);
         const data = await req.json();
-        const user = this.one('SELECT * FROM users WHERE id=?', String(data.id || '').trim());
-        const valid = user && /^\d{6,8}$/.test(String(data.pin || '')) && same(await pinHash(String(data.pin), user.salt), user.pin_hash);
-        if (!valid) {
-          this.db.exec('INSERT INTO attempts (id,at) VALUES (?,?)', uid(), new Date().toISOString());
-          return fail('Incorrect ID or PIN', 401);
+        const id = String(data.id || '').trim();
+        if (id !== ADMIN_ID) return fail('Employee ID not enabled for the pilot', 403);
+        let user = this.one('SELECT id,name FROM users WHERE id=?', ADMIN_ID);
+        if (!user) {
+          this.db.exec('INSERT INTO users (id,name,salt,pin_hash,created_at) VALUES (?,?,?,?,?)', ADMIN_ID, 'Travis Nunn', '', '', new Date().toISOString());
+          user = this.one('SELECT id,name FROM users WHERE id=?', ADMIN_ID);
         }
-        this.db.exec('DELETE FROM attempts');
         return await this.newSession(user.id);
       }
       if (route === '/api/logout' && req.method === 'POST') {
@@ -181,6 +161,8 @@ export class Timeclock {
         this.audit('pto-request', { id, date, hours });
         return json({ ok: true });
       }
+      // Administrative operation disabled during ID-only pilot.
+      if (route === '/api/pto-review') return fail('Admin actions require verified sign-in', 403);
       if (route === '/api/pto-review' && req.method === 'POST') {
         const data = await req.json(), status = String(data.status || '');
         if (!['APPROVED','DENIED'].includes(status)) return fail('Invalid status');
@@ -190,6 +172,8 @@ export class Timeclock {
         this.audit('pto-reviewed', { id: reqrow.id, status });
         return json({ ok: true });
       }
+      // Administrative operation disabled during ID-only pilot.
+      if (route === '/api/punch-edit') return fail('Admin actions require verified sign-in', 403);
       if (route === '/api/punch-edit' && req.method === 'POST') {
         const data = await req.json();
         const target = this.one('SELECT * FROM punches WHERE id=? AND user_id=?', String(data.id || ''), user.id);
@@ -203,6 +187,8 @@ export class Timeclock {
         this.audit('punch-corrected', { id: target.id, from: was, to: parsed.toISOString() });
         return json({ ok: true });
       }
+      // Administrative operation disabled during ID-only pilot.
+      if (route === '/api/export') return fail('Admin actions require verified sign-in', 403);
       if (route === '/api/export' && req.method === 'GET') {
         const data = compute(thisWeek(), monday, today);
         const pto = this.all("SELECT hours FROM pto WHERE user_id=? AND date>=? AND date<=? AND status='APPROVED'", user.id, monday, sunday).reduce((a,x)=>a+x.hours,0);
