@@ -22,6 +22,30 @@ export async function adminOps(store,request){
   });
   return result({week,sunday,today,employees:employeeData});
  }
+ if(route==='/api/admin/roster-import'&&method==='POST'){
+  const data=await request.json();
+  const rows=Array.isArray(data.employees)?data.employees:[];
+  if(rows.length<1||rows.length>100)return error('Import must contain 1 to 100 employees');
+  const ids=new Set();
+  const normalized=[];
+  for(const entry of rows){
+   const employeeId=String(entry.id??'').trim(),name=String(entry.name??'').trim();
+   if(!/^\d{1,12}$/.test(employeeId)||name.length<2||name.length>90)return error('Invalid employee in roster');
+   if(ids.has(employeeId))return error('Duplicate ID in roster');
+   ids.add(employeeId);
+   normalized.push({id:employeeId,name,enabled:entry.enabled===true});
+  }
+  let added=0,existing=0;
+  for(const e of normalized){
+    const found=store.one('SELECT id FROM users WHERE id=?',e.id);
+    if(found){existing++;continue;}
+    store.db.exec('INSERT INTO users (id,name,salt,pin_hash,created_at) VALUES (?,?,?,?,?)',e.id,e.name,'','',new Date().toISOString());
+    store.db.exec('INSERT OR REPLACE INTO employee_controls (id,enabled) VALUES (?,?)',e.id,e.enabled?1:0);
+    added++;
+  }
+  store.audit('roster-import',{added,existing,total:rows.length},'admin');
+  return result({ok:true,added,existing});
+ }
  if(route==='/api/admin/employee'&&method==='POST'){
   const data=await request.json(),employeeId=String(data.id||'').trim(),name=String(data.name||'').trim();
   if(!/^\d{1,12}$/.test(employeeId)||name.length<2||name.length>90)return error('Enter a valid employee ID and name');
