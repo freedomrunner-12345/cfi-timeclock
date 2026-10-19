@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "CFI Time Clock",
+  "short_name": "CFI Time",
+  "description": "Secure time tracking for CFI Tire Service",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f6f8",
+  "theme_color": "#b81025",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
