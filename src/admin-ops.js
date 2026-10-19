@@ -11,14 +11,14 @@ export async function adminOps(store,request){
  const week=asked&&/^\d{4}-\d{2}-\d{2}$/.test(asked)&&store.week(asked)===asked?asked:store.week(today);
  const sunday=store.endWeek(week);
  if(route==='/api/admin/state'&&method==='GET'){
-  const users=store.all('SELECT id,name FROM users ORDER BY name COLLATE NOCASE');
+  const users=store.all('SELECT id,name,preferred_name FROM users ORDER BY name COLLATE NOCASE');
   const employeeData=users.map(u=>{
    const flag=store.one('SELECT enabled FROM employee_controls WHERE id=?',u.id);
    const punches=punchesFor(store,u.id,week);
    const totals=store.calculate(punches,week,today);
    const requests=store.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date',u.id,week,sunday);
    const approvedPto=requests.filter(p=>p.status==='APPROVED').reduce((sum,p)=>sum+p.hours,0);
-   return {id:u.id,name:u.name,enabled:flag?.enabled!==0,totals,requests,approvedPto,punches};
+   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',enabled:flag?.enabled!==0,totals,requests,approvedPto,punches};
   });
   return result({week,sunday,today,employees:employeeData});
  }
@@ -53,6 +53,18 @@ export async function adminOps(store,request){
   store.db.exec('INSERT INTO users (id,name,salt,pin_hash,created_at) VALUES (?,?,?,?,?)',employeeId,name,'','',new Date().toISOString());
   store.db.exec('INSERT OR REPLACE INTO employee_controls(id,enabled) VALUES (?,?)',employeeId,1);
   store.audit('employee-added',{employeeId,name},'admin');
+  return result({ok:true});
+ }
+ if(route==='/api/admin/preferred-name'&&method==='POST'){
+  const data=await request.json();
+  const employeeId=String(data.id??'').trim();
+  const preferredName=String(data.preferredName??'').trim();
+  if(!/^\d{1,12}$/.test(employeeId))return error('Invalid employee ID');
+  if(preferredName.length>60||/[<>\r\n\x00-\x1f]/.test(preferredName))return error('Preferred name must be up to 60 characters and contain no control characters');
+  const employee=store.one('SELECT id,name,preferred_name FROM users WHERE id=?',employeeId);
+  if(!employee)return error('Employee not found',404);
+  store.db.exec('UPDATE users SET preferred_name=? WHERE id=?',preferredName,employeeId);
+  store.audit('preferred-name-updated',{employeeId,previous:employee.preferred_name||'',updated:preferredName},'admin');
   return result({ok:true});
  }
  if(route==='/api/admin/employee-status'&&method==='POST'){
