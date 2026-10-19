@@ -10,14 +10,56 @@ main{text-align:center;max-width:520px;padding:20px 18px 60px}.top{display:flex;
 .emblem-crop .real-logo{position:absolute;display:block;width:386px!important;max-width:none!important;height:139px!important;left:-43px;top:0;object-fit:initial}
 .brand-title{font-size:18px;font-weight:800;letter-spacing:-.035em;color:#24242c}
 @media(max-width:400px){.brand{max-width:none!important;padding:0!important}}
-</style></head><body><main><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="brand-title">CFI Tire Service</span></div><button id="signout" class="close hidden">Sign out</button></header><div id="app"></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
+
+#signout{display:block!important;margin:12px auto 0!important;min-height:54px!important;min-width:190px!important;border-radius:15px!important;font-size:19px!important;font-weight:750!important;background:#ffffff!important;color:#b81025!important;border:2px solid #b81025!important;box-shadow:0 3px 14px #201c200b}
+#signout.hidden{display:none!important}
+.inactivity-label{margin-top:7px;text-align:center;font-size:14px;color:#777986;font-variant-numeric:tabular-nums;font-weight:600}
+.today-card .row{text-align:center;align-items:center}
+.modal .section{text-align:center;margin:22px 0 8px}
+.modal .row{font-size:17px}
+</style></head><body><main><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="brand-title">CFI Tire Service</span></div><button id="signout" class="close hidden">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></header><div id="app"></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null;
+let lastActivity=Date.now(), countdownTimer=null,lastPing=0,signingOut=false;
+const TIMEOUT_MS=60000;
+function updateCountdown(){
+ if(!state)return;
+ const remaining=Math.max(0,Math.ceil((TIMEOUT_MS-(Date.now()-lastActivity))/1000));
+ const target=$('inactivity');
+ if(target){target.classList.remove('hidden');target.textContent='Automatic Sign Out In '+Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');}
+ if(remaining<=0){signOut(true);}
+}
+function stopCountdown(){clearInterval(countdownTimer);countdownTimer=null;$('inactivity')?.classList.add('hidden');}
+function startCountdown(){lastActivity=Date.now();clearInterval(countdownTimer);countdownTimer=setInterval(updateCountdown,1000);updateCountdown();}
+function interaction(){
+ if(!state||signingOut)return;
+ if(Date.now()-lastActivity>=TIMEOUT_MS){signOut(true);return;}
+ lastActivity=Date.now();updateCountdown();
+ if(Date.now()-lastPing>10000){
+   lastPing=Date.now();
+   api('activity',{}).catch(err=>{if(/sign in/i.test(err.message))signOut(true)});
+ }
+}
+async function signOut(expired=false){
+ if(signingOut)return;
+ signingOut=true;stopCountdown();
+ state=null;
+ document.getElementById('success-layer')?.remove();
+ close();
+ try{await api('logout',{})}catch(e){}
+ finally{signingOut=false;window.location.reload();}
+}
+for(const eventName of ['pointerdown','keydown','touchstart','wheel']){
+ document.addEventListener(eventName,interaction,{passive:true});
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state){if(Date.now()-lastActivity>=TIMEOUT_MS)signOut(true);else updateCountdown();}});
+window.addEventListener('pageshow',()=>{if(state&&Date.now()-lastActivity>=TIMEOUT_MS)signOut(true)});
+
 async function api(path,data){const r=await fetch('/api/'+path,{method:data===undefined?'GET':'POST',credentials:'same-origin',headers:data===undefined?{}:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data)}),v=await r.json();if(!r.ok)throw Error(v.error||'Request failed');return v}
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function modal(s){$('overlay').innerHTML='<div class="modal"><button id="close" class="close">×</button>'+s+'</div>';$('overlay').classList.remove('hidden');$('close').onclick=close;$('overlay').onclick=e=>{if(e.target===$('overlay'))close()}}
 function close(){$('overlay').classList.add('hidden')}
-function signin(){clearInterval(interval);state=null;$('signout').classList.add('hidden');$('app').innerHTML='<div class="eyebrow">WELCOME BACK</div><h1 class="hello">Ready when you are.</h1><p class="sub">Enter your employee ID to continue.</p><div class="card"><h2>Sign in</h2><form id="login"><label class="field">Paychex employee ID</label><input class="input" name="id" id="id" inputmode="numeric" required placeholder="Enter your ID"><button class="primary">Continue</button></form><p class="muted">Your device will remember you after signing in.</p></div>';$('login').onsubmit=async e=>{e.preventDefault();try{await api('login',{id:$('id').value});await load()}catch(e){toast(e.message)}}}
+function signin(){clearInterval(interval);stopCountdown();state=null;$('signout').classList.add('hidden');$('app').innerHTML='<div class="eyebrow">EMPLOYEE ACCESS</div><h1 class="hello">Sign In</h1><p class="sub">Enter Your Employee ID.</p><div class="card"><h2>Employee Sign In</h2><form id="login"><label class="field">Paychex Employee ID</label><input class="input" name="id" id="id" inputmode="numeric" required placeholder="Enter Employee ID"><button class="primary">Sign In</button></form><p class="muted">You Will Be Signed Out After 1 Minute Of Inactivity.</p></div>';$('login').onsubmit=async e=>{e.preventDefault();try{await api('login',{id:$('id').value});await load()}catch(e){toast(e.message)}}}
 
 function firstName(name){const n=String(name||'').trim();return n.includes(',')?(n.split(',')[1]?.trim().split(/\s+/)[0]||'there'):(n.split(/\s+/)[0]||'there')}
 function punchesToday(s){return s.totals.days.find(d=>d.date===s.today)?.punches||[]}
@@ -25,21 +67,26 @@ function render(){
  $('signout').classList.remove('hidden');
  const s=state,first=escapeHTML(firstName(s.user.name)),on=s.isClockedIn,entries=punchesToday(s);
  const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'Clocked in':'Clocked out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
- $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome back, '+first+'.</h1><p class="sub">'+(entries.length?'You’re all set. Have a great day!':'A great day starts here.')+'</p><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s punches</h2><div class="card today-card">'+(list||'<div class="empty">No punches yet today.<br>Your first clock-in will appear here.</div>')+'</div><h2 class="section">More options</h2><div class="card" style="padding:0;overflow:hidden"><button class="link" id="pto">Request time off<small>Current payroll week</small></button><button class="link" id="history">View my timecard<small>Daily punches and weekly hours</small></button></div>';
+ $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome back, '+first+'.</h1><p class="sub">'+(entries.length?'You’re all set. Have a great day!':'A great day starts here.')+'</p><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More options</h2><div class="card" style="padding:0;overflow:hidden"><button class="link" id="pto">Request Time Off<small>Current Payroll Week</small></button><button class="link" id="history">View My Timecard<small>Daily Clock In And Clock Out Times</small></button></div>';
  $('punch').onclick=()=>punch(on?'OUT':'IN');$('pto').onclick=pto;$('history').onclick=history;
 }
 function showSuccess(kind,isFirst,at){
  document.getElementById('success-layer')?.remove();
  const first=escapeHTML(firstName(state.user.name));
- const title=kind==='OUT'?'You’re clocked out!':isFirst?'Have a great day, '+first+'!':'Welcome back!';
- const message=kind==='OUT'?'Clocked out at '+fmt(at)+'. Enjoy your time off!':isFirst?'Your first clock-in is recorded. Let’s make today a good one!':'Your clock-in is recorded. You’re all set!';
+ const title=kind==='OUT'?'Clock Out Successful':kind==='IN'?'Clock In Successful':'Punch Recorded';
+ const message=kind==='OUT'?'Recorded At '+fmt(at):isFirst?'Have A Great Day, '+first+'!':'Recorded At '+fmt(at);
  const layer=document.createElement('div');layer.id='success-layer';layer.className='success-layer';layer.setAttribute('role','status');
  layer.innerHTML='<div class="success-card"><div class="success-check"><svg viewBox="0 0 60 60"><path d="M12 31l12 12 25-27"/></svg></div><div class="success-title">'+title+'</div><div class="success-sub">'+message+'</div><button id="success-done" class="success-done">Done</button></div>';
  document.body.appendChild(layer);document.getElementById('success-done').onclick=()=>layer.remove();
 }
-async function load(){try{state=await api('state');render()}catch(e){signin();if(!/sign in/i.test(e.message))toast(e.message)}}
+async function load(){try{state=await api('state');render();startCountdown()}catch(e){signin();if(!/sign in/i.test(e.message))toast(e.message)}}
 async function punch(kind){const button=$('punch');button.disabled=true;const first=kind==='IN'&&!punchesToday(state).some(p=>p.kind==='IN');try{const reply=await api('punch',{kind});await load();showSuccess(kind,first,reply.at)}catch(err){button.disabled=false;toast(err.message)}}
 function pto(){const s=state;modal('<h2>Request time off</h2><p class="sub">For your current pay period.</p><form id="ptoform"><label class="field">Date</label><input class="input" type="date" id="date" min="'+s.monday+'" max="'+s.sunday+'" value="'+s.today+'" required><label class="field">Hours</label><select class="input" id="hours">'+Array.from({length:48},(_,i)=>'<option value="'+((i+1)/4)+'" '+(i===31?'selected':'')+'>'+fixed((i+1)/4)+' hours</option>').join('')+'</select><button class="primary">Submit request</button></form><div class="info">Requests remain pending until reviewed.</div>');$('ptoform').onsubmit=async e=>{e.preventDefault();try{await api('pto',{date:$('date').value,hours:Number($('hours').value)});close();await load();toast('PTO requested')}catch(e){toast(e.message)}}}
-function history(){const s=state,t=s.totals;modal('<h2>My timecard</h2><p class="sub">'+day(s.monday)+' – '+day(s.sunday)+'</p><div class="info">Weekly total is rounded once to the nearest quarter-hour. First completed break receives a 30-minute lunch credit.</div><div class="row"><b>Regular</b><b>'+fixed(t.regularHours)+'</b></div><div class="row"><b>Overtime</b><b>'+fixed(t.overtimeHours)+'</b></div>'+t.days.map(d=>'<div class="row"><b>'+day(d.date)+(d.needsReview?' ⚠':'')+'</b><b>'+fixed(d.minutes/60)+' hrs</b></div>'+d.punches.map(p=>'<div class="row"><span class="muted">'+p.kind+'</span><span>'+fmt(p.at)+'</span></div>').join('')).join('')+'<h3>PTO requests</h3>'+s.requests.map(r=>'<div class="row"><span>'+day(r.date)+' · '+fixed(r.hours)+'</span><b>'+escapeHTML(r.status)+'</b></div>').join('')+'<div class="info">Need a correction? Please contact the office.</div>')}
-$('signout').onclick=async()=>{try{await api('logout',{});signin()}catch(e){toast(e.message)}};if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});load();
+function history(){
+ const s=state;
+ const dates=s.totals.days.filter(d=>d.punches.length);
+ const lines=dates.length?dates.map(d=>'<h3 class="section">'+day(d.date)+'</h3>'+d.punches.map(p=>'<div class="row"><span>'+(p.kind==='IN'?'Clock In':'Clock Out')+'</span><strong>'+fmt(p.at)+'</strong></div>').join('')).join(''):'<div class="info">No Punches Recorded This Week.</div>';
+ modal('<h2>My Timecard</h2><p class="sub">'+day(s.monday)+' – '+day(s.sunday)+'</p>'+lines);
+}
+$('signout').onclick=()=>signOut(false);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});load();
 </script></body></html>
