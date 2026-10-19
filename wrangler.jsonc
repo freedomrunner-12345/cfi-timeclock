@@ -6,10 +6,9 @@
     "directory": "./public",
     "binding": "ASSETS",
     "run_worker_first": [
-      "/api/*",
-      "/admin",
-      "/admin/"
-    ]
+      "/api/*"
+    ],
+    "html_handling": "auto-trailing-slash"
   },
   "durable_objects": {
     "bindings": [
