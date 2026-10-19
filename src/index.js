@@ -28,7 +28,7 @@ const pinHash = async (pin, salt) => {
   return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 170000, hash: 'SHA-256' }, key, 256));
 };
 const same = (a, b) => a.length === b.length && [...a].reduce((v, c, i) => v | (c.charCodeAt(0) ^ b.charCodeAt(i)), 0) === 0;
-const cookie = (token, clear = false) => 'cfi_kiosk_session=' + (clear ? '' : token) + '; Path=/; HttpOnly; Secure; SameSite=Strict' + (clear ? '; Max-Age=0' : '; Max-Age=120');
+const cookie = (token, clear = false) => 'cfi_kiosk_session=' + (clear ? '' : token) + '; Path=/; HttpOnly; Secure; SameSite=Strict' + (clear ? '; Max-Age=0' : '');
 function compute(punches, monday, today) {
   const grouped = {};
   for (const p of punches) {
