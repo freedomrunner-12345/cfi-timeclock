@@ -5,7 +5,7 @@ Mobile-first, installable time clock for CFI Tire Service, hosted on Cloudflare 
 ## Getting started
 
 1. Deploy using `npx wrangler deploy` from the GitHub-connected Cloudflare Worker. Leave Build Command blank.
-2. Open `https://YOUR-WORKER-URL/admin` **immediately after the first successful deployment**. Choose your new administrator password (at least 10 characters), which is stored as a salted PBKDF2 hash. This is the only setup step.
+2. In Cloudflare Workers & Pages → **cfi-timeclock** → Settings → Variables and Secrets, add a **Secret** named `ADMIN_PASSWORD` with a unique password at least 12 characters long. Do not add this value to GitHub. Once the Worker redeploys, open `https://YOUR-WORKER-URL/admin/` and sign in using that password. There is no public administrator account setup.
 3. Within **Employees**, add your own Paychex employee ID and name. No ID or employee name is hardcoded into current source files.
 4. Open the standard app URL on your phone or tablet. Enter your employee ID and tap **Continue**. The app greets you by your name and remembers your session.
 5. Install from Android Chrome → **Install app**, or iPhone/iPad Safari → **Share → Add to Home Screen**.
@@ -14,9 +14,9 @@ Mobile-first, installable time clock for CFI Tire Service, hosted on Cloudflare 
 
 Employee sign-in uses **ID only**, exactly as requested. This is convenient but does not verify identity: someone with another employee's ID could access their timecard or submit punches under their name. Only enable employees when you are comfortable with this trade-off and consider stronger verification before a wider rollout.
 
-The administrator has a **separate password-protected session** on `/admin`; employee ID login does not grant admin access. Admins can add/disable employees, review and correct punches, approve/deny PTO, and export weekly payroll CSV files. Password resets are not yet available in the UI; store the administrator password safely.
+The administrator has a **separate password-protected session** on `/admin`; employee ID login does not grant admin access. Admins can add/disable employees, review and correct punches, approve/deny PTO, and export weekly payroll CSV files. The admin password can be changed in Cloudflare's Worker secrets; store it safely.
 
-**Important initial-setup caveat:** First-time administrator setup is available to the first visitor at `/admin`. Because no setup secret is required, someone could claim this account before you do if the deployment URL is found. Set the password promptly on your first deployment, ideally before sharing the URL. The password cannot be reset without administrative maintenance.
+**Admin credential:** `/admin` uses the Cloudflare `ADMIN_PASSWORD` Worker secret directly. Changing that secret revokes existing admin sessions. If the secret is missing or shorter than 12 characters, admin sign-in is disabled until it is corrected.
 
 The GitHub repository was originally public; earlier commit history may contain an employee ID even after its removal from current source. Consider making the repository private, and if necessary rewriting history to remove previously committed identifiers.
 
