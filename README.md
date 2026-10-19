@@ -33,3 +33,9 @@ The GitHub repository was originally public; earlier commit history may contain 
 - This pilot is not yet a complete payroll system. Compare its results against the existing spreadsheet before processing payroll.
 
 The employee interface is optimized for phones and tablets with large text and CFI red branding.
+
+## Administrator timecard corrections
+
+Use **Admin → Timecards → View** for an employee. **Add Missed Punch** creates a dated Clock In or Clock Out; **Edit** corrects the time of a particular punch; **Delete** removes just that one punch after the administrator types `DELETE`. The broad week-clear action has been removed. Punch changes are audit-logged with original values and the employee's active kiosk sessions are invalidated after manual additions/deletions. Review any incomplete or nonalternating punch sequences before payroll.
+
+Under **Admin → Employees → Preferred Name**, set the name shown on employee clock-in screens and confirmations. The Paychex name remains intact for exports and payroll. Leave Preferred Name blank to default to the first name parsed from the Paychex name.
