@@ -183,10 +183,6 @@ export class Timeclock {
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
-    if (url.pathname === '/admin' || url.pathname === '/admin/') {
-      const target = new URL('/admin/index.html', url.origin);
-      return env.ASSETS.fetch(new Request(target, req));
-    }
     if (url.pathname.startsWith('/api/')) {
       const id = env.CLOCK.idFromName('cfi-production');
       return env.CLOCK.get(id).fetch(req);
