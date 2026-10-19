@@ -85,27 +85,35 @@ export async function adminOps(store,request){
   store.audit('pto-reviewed',{requestId,employeeId:entry.user_id,status},'admin');
   return result({ok:true});
  }
- if(route==='/api/admin/clear-week-punches'&&method==='POST'){
+ if(route==='/api/admin/punch-add'&&method==='POST'){
   const data=await request.json();
   const employeeId=String(data.employeeId??'').trim();
-  const targetWeek=String(data.week??'').trim();
-  const confirmation=String(data.confirmation??'');
-  if(confirmation!=='CLEAR')return error('Type CLEAR to confirm deletion');
-  if(!/^\d{1,12}$/.test(employeeId)||!/^\d{4}-\d{2}-\d{2}$/.test(targetWeek)||store.week(targetWeek)!==targetWeek)return error('Invalid employee or payroll week');
-  if(targetWeek>store.week(today))return error('Future payroll weeks cannot be cleared');
-  const employee=store.one('SELECT id,name FROM users WHERE id=?',employeeId);
-  if(!employee)return error('Employee not found',404);
-  const punches=punchesFor(store,employeeId,targetWeek);
-  if(!punches.length)return error('There are no punches to clear for this week',409);
-  // Preserve the original punch details in a restricted administrator audit record.
-  // Separate PTO, user profiles, and other payroll weeks are never modified.
-  const last=store.one('SELECT kind,at FROM punches WHERE user_id=? ORDER BY at DESC LIMIT 1',employeeId);
-  if(last?.kind==='IN' && punches.some(p=>p.at===last.at))return error('Employee is currently clocked in. Clock out before clearing punches',409);
-  store.audit('test-punches-cleared',{employeeId,employeeName:employee.name,week:targetWeek,count:punches.length,punches:punches.map(p=>({id:p.id,kind:p.kind,at:p.at,corrected_at:p.corrected_at}))},'admin');
-  for(const p of punches)store.db.exec('DELETE FROM punches WHERE id=? AND user_id=?',p.id,employeeId);
-  // Invalidate kiosk sessions so older employee screens must reload.
+  const kind=String(data.kind??'');
+  const at=validStamp(data.at);
+  if(!/^\d{1,12}$/.test(employeeId)||!['IN','OUT'].includes(kind)||!at)return error('Select a valid employee, punch type, date and time');
+  if(!store.one('SELECT id FROM users WHERE id=?',employeeId))return error('Employee not found',404);
+  const time=at.toISOString();
+  const previous=store.all('SELECT kind,at FROM punches WHERE user_id=? ORDER BY at',employeeId);
+  if(previous.some(p=>p.at===time))return error('A punch already exists at this exact time',409);
+  const combined=[...previous,{kind,at:time}].sort((a,b)=>a.at.localeCompare(b.at));
+  const index=combined.findIndex(p=>p.at===time);
+  if(index>0&&combined[index-1].kind===kind||index<combined.length-1&&combined[index+1].kind===kind)return error('Punches must alternate Clock In and Clock Out. Check adjacent punches first.');
+  if(index===0&&kind!=='IN')return error('First recorded punch must be Clock In.');
+  const punchId=id(),now=new Date().toISOString();
+  store.db.exec('INSERT INTO punches(id,user_id,kind,at,created_at,corrected_at) VALUES (?,?,?,?,?,?)',punchId,employeeId,kind,time,now,now);
+  store.audit('admin-punch-added',{id:punchId,employeeId,kind,at:time},'admin');
   store.db.exec('DELETE FROM sessions WHERE user_id=?',employeeId);
-  return result({ok:true,deleted:punches.length,employeeId,week:targetWeek});
+  return result({ok:true,id:punchId});
+ }
+ if(route==='/api/admin/punch-delete'&&method==='POST'){
+  const data=await request.json(),punchId=String(data.id??'');
+  if(data.confirmation!=='DELETE')return error('Type DELETE to confirm');
+  const punch=store.one('SELECT id,user_id,kind,at,created_at,corrected_at FROM punches WHERE id=?',punchId);
+  if(!punch)return error('Punch not found',404);
+  store.audit('admin-punch-deleted',{...punch},'admin');
+  store.db.exec('DELETE FROM punches WHERE id=? AND user_id=?',punch.id,punch.user_id);
+  store.db.exec('DELETE FROM sessions WHERE user_id=?',punch.user_id);
+  return result({ok:true,deleted:1});
  }
  if(route==='/api/admin/punch-edit'&&method==='POST'){
   const data=await request.json(),entry=store.one('SELECT id,user_id,kind,at FROM punches WHERE id=?',String(data.id||''));
