@@ -7,7 +7,7 @@ Mobile-first, installable time clock for CFI Tire Service, hosted on Cloudflare 
 1. Deploy using `npx wrangler deploy` from the GitHub-connected Cloudflare Worker. Leave Build Command blank.
 2. In Cloudflare Workers & Pages → **cfi-timeclock** → Settings → Variables and Secrets, add a **Secret** named `ADMIN_PASSWORD` with a unique password at least 12 characters long. Do not add this value to GitHub. Once the Worker redeploys, open `https://YOUR-WORKER-URL/admin/` and sign in using that password. There is no public administrator account setup.
 3. Within **Employees**, upload the supplied `CFI_Time_Clock_Employee_Roster.tsv` using **Import employee roster**. It contains all 20 original employee records, with only the testing account enabled. You can enable other employees later using the Employee access controls. Employee IDs and names are not baked into the public repository.
-4. Open the standard app URL on your phone or tablet. Enter your employee ID and tap **Continue**. The app greets you by your name and remembers your session.
+4. Open the standard app URL on your phone or tablet. Enter your employee ID and tap **Continue**. The app displays your first name, current clock status, and today's punch times. It automatically signs out and reloads after 60 seconds of inactivity.
 5. Install from Android Chrome → **Install app**, or iPhone/iPad Safari → **Share → Add to Home Screen**.
 
 ### Security and onboarding
@@ -26,6 +26,8 @@ The GitHub repository was originally public; earlier commit history may contain 
 - Two punch buttons (In and Out); first completed out/in break each day receives a 30-minute paid lunch credit.
 - Additional breaks are deducted by the initial spreadsheet rule. Ordinary short breaks (often 5–20 minutes) can legally be paid work time. **Review break handling before relying on the totals for real payroll.**
 - Weekly hours worked are rounded once to the nearest 0.25 hour. Regular hours up to 40, overtime for hours worked over 40. PTO is recorded separately, may be retroactive within the current Monday–Sunday pay week, and must be approved by the administrator.
+- The employee timecard lists only clock-in and clock-out timestamps for days with punches, without daily or weekly hour totals. Admin payroll reporting still calculates hours.
+- Employee sessions expire after 60 seconds of inactivity; they use a browser-session cookie and are not remembered long-term. A visible countdown and prominent Sign Out control support shared tablets.
 - Exact punch time history, admin audit trail, and corrections restricted to the original workday.
 - Incomplete shifts are marked for review. There is no offline punch recording.
 - This pilot is not yet a complete payroll system. Compare its results against the existing spreadsheet before processing payroll.
