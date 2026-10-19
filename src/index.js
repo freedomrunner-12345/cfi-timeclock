@@ -84,6 +84,9 @@ export class Timeclock {
     this.env = env;
     this.db = ctx.storage.sql;
     this.db.exec('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT NOT NULL, salt TEXT NOT NULL, pin_hash TEXT NOT NULL, created_at TEXT NOT NULL)');
+    if (![...this.db.exec('PRAGMA table_info(users)')].some(column => column.name === 'preferred_name')) {
+      this.db.exec("ALTER TABLE users ADD COLUMN preferred_name TEXT NOT NULL DEFAULT ''");
+    }
     this.db.exec('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS punches (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, created_at TEXT NOT NULL, corrected_at TEXT)');
     this.db.exec('CREATE TABLE IF NOT EXISTS pto (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, hours REAL NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, reviewed_at TEXT)');
@@ -105,7 +108,7 @@ export class Timeclock {
     const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_kiosk_session=([^;]+)/)?.[1];
     if (!token) return null;
     const now = new Date().toISOString();
-    return this.one('SELECT users.id, users.name FROM sessions JOIN users ON sessions.user_id = users.id WHERE token_hash=? AND expires_at>?', await sha(token), now);
+    return this.one('SELECT users.id, users.name, users.preferred_name FROM sessions JOIN users ON sessions.user_id = users.id WHERE token_hash=? AND expires_at>?', await sha(token), now);
   }
   async fetch(req) {
     try {
@@ -150,7 +153,7 @@ export class Timeclock {
         const requests = this.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date', user.id, monday, sunday);
         const last = this.one('SELECT id,kind,at FROM punches WHERE user_id=? ORDER BY at DESC LIMIT 1', user.id);
         const worked = totals.workedHours;
-        return json({ user: { id: user.id, name: user.name }, monday, sunday, today, punches, totals, requests, isClockedIn: last?.kind === 'IN', lastPunch: last, ptoHours: requests.filter(r => r.status === 'APPROVED').reduce((v,r) => v + r.hours, 0), worked });
+        return json({ user: { id: user.id, name: user.name, preferredName: user.preferred_name || '' }, monday, sunday, today, punches, totals, requests, isClockedIn: last?.kind === 'IN', lastPunch: last, ptoHours: requests.filter(r => r.status === 'APPROVED').reduce((v,r) => v + r.hours, 0), worked });
       }
       if (route === '/api/punch' && req.method === 'POST') {
         const data = await req.json();
