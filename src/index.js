@@ -28,7 +28,7 @@ const pinHash = async (pin, salt) => {
   return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 170000, hash: 'SHA-256' }, key, 256));
 };
 const same = (a, b) => a.length === b.length && [...a].reduce((v, c, i) => v | (c.charCodeAt(0) ^ b.charCodeAt(i)), 0) === 0;
-const cookie = (token, clear = false) => 'cfi_session=' + (clear ? '' : token) + '; Path=/; HttpOnly; Secure; SameSite=Strict' + (clear ? '; Max-Age=0' : '; Max-Age=2592000');
+const cookie = (token, clear = false) => 'cfi_kiosk_session=' + (clear ? '' : token) + '; Path=/; HttpOnly; Secure; SameSite=Strict' + (clear ? '; Max-Age=0' : '; Max-Age=120');
 function compute(punches, monday, today) {
   const grouped = {};
   for (const p of punches) {
@@ -102,7 +102,7 @@ export class Timeclock {
   week(day) { return weekOf(day); }
   endWeek(monday) { return endOfWeek(monday); }
   async session(req) {
-    const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_session=([^;]+)/)?.[1];
+    const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_kiosk_session=([^;]+)/)?.[1];
     if (!token) return null;
     const now = new Date().toISOString();
     return this.one('SELECT users.id, users.name FROM sessions JOIN users ON sessions.user_id = users.id WHERE token_hash=? AND expires_at>?', await sha(token), now);
@@ -128,14 +128,22 @@ export class Timeclock {
         return this.newSession(employee.id);
       }
       if (route === '/api/logout' && req.method === 'POST') {
-        const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_session=([^;]+)/)?.[1];
+        const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_kiosk_session=([^;]+)/)?.[1];
         if (token) this.db.exec('DELETE FROM sessions WHERE token_hash=?', await sha(token));
         const out = json({ ok: true }); out.headers.set('Set-Cookie', cookie('', true)); return out;
       }
       const user = await this.session(req);
       if (!user) return fail('Please sign in', 401);
+      const kioskToken=(req.headers.get('Cookie')||'').match(/(?:^|;\s*)cfi_kiosk_session=([^;]+)/)?.[1];
+      if(kioskToken)this.db.exec('UPDATE sessions SET expires_at=? WHERE token_hash=?',new Date(Date.now()+60_000).toISOString(),await sha(kioskToken));
       const today = localDate(new Date().toISOString()), monday = weekOf(today), sunday = endOfWeek(monday);
       const thisWeek = () => this.all('SELECT id,kind,at,created_at,corrected_at FROM punches WHERE user_id=? ORDER BY at ASC', user.id).filter(p => localDate(p.at) >= monday && localDate(p.at) <= sunday);
+      if (route === '/api/activity' && req.method === 'POST') {
+        const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_kiosk_session=([^;]+)/)?.[1];
+        if (!token) return fail('Please sign in', 401);
+        this.db.exec('UPDATE sessions SET expires_at=? WHERE token_hash=?', new Date(Date.now()+60_000).toISOString(), await sha(token));
+        return json({ok:true});
+      }
       if (route === '/api/state' && req.method === 'GET') {
         const punches = thisWeek();
         const totals = compute(punches, monday, today);
@@ -173,7 +181,7 @@ export class Timeclock {
   }
   async newSession(id) {
     const token = uid() + uid();
-    const expires = new Date(Date.now() + 30 * 86400000).toISOString();
+    const expires = new Date(Date.now() + 60_000).toISOString();
     this.db.exec('INSERT INTO sessions (token_hash,user_id,expires_at) VALUES (?,?,?)', await sha(token), id, expires);
     const out = json({ ok: true });
     out.headers.set('Set-Cookie', cookie(token));
