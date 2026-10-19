@@ -17,6 +17,11 @@ main{text-align:center;max-width:520px;padding:20px 18px 60px}.top{display:flex;
 .today-card .row{text-align:center;align-items:center}
 .modal .section{text-align:center;margin:22px 0 8px}
 .modal .row{font-size:17px}
+
+/* Shared-device readability adjustments */
+#login .input{text-align:center;font-variant-numeric:tabular-nums}
+#login .input::placeholder{text-align:center}
+.inactivity-label .countdown-number{color:#b81025;font-weight:800;font-variant-numeric:tabular-nums}
 </style></head><body><main><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="brand-title">CFI Tire Service</span></div><button id="signout" class="close hidden">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></header><div id="app"></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null;
@@ -26,7 +31,7 @@ function updateCountdown(){
  if(!state)return;
  const remaining=Math.max(0,Math.ceil((TIMEOUT_MS-(Date.now()-lastActivity))/1000));
  const target=$('inactivity');
- if(target){target.classList.remove('hidden');target.textContent='Automatic Sign Out In '+Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');}
+ if(target){target.classList.remove('hidden');const time=Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');target.innerHTML='Automatic Sign Out In <span class="countdown-number">'+time+'</span>';}
  if(remaining<=0){signOut(true);}
 }
 function stopCountdown(){clearInterval(countdownTimer);countdownTimer=null;$('inactivity')?.classList.add('hidden');}
