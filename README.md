@@ -6,7 +6,7 @@ Mobile-first, installable time clock for CFI Tire Service, hosted on Cloudflare 
 
 1. Deploy using `npx wrangler deploy` from the GitHub-connected Cloudflare Worker. Leave Build Command blank.
 2. In Cloudflare Workers & Pages → **cfi-timeclock** → Settings → Variables and Secrets, add a **Secret** named `ADMIN_PASSWORD` with a unique password at least 12 characters long. Do not add this value to GitHub. Once the Worker redeploys, open `https://YOUR-WORKER-URL/admin/` and sign in using that password. There is no public administrator account setup.
-3. Within **Employees**, add your own Paychex employee ID and name. No ID or employee name is hardcoded into current source files.
+3. Within **Employees**, upload the supplied `CFI_Time_Clock_Employee_Roster.tsv` using **Import employee roster**. It contains all 20 original employee records, with only the testing account enabled. You can enable other employees later using the Employee access controls. Employee IDs and names are not baked into the public repository.
 4. Open the standard app URL on your phone or tablet. Enter your employee ID and tap **Continue**. The app greets you by your name and remembers your session.
 5. Install from Android Chrome → **Install app**, or iPhone/iPad Safari → **Share → Add to Home Screen**.
 
