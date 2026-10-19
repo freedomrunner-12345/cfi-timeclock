@@ -71,14 +71,14 @@ function firstName(name){const n=String(name||'').trim();return n.includes(',')?
 function punchesToday(s){return s.totals.days.find(d=>d.date===s.today)?.punches||[]}
 function render(){
  $('signout').classList.remove('hidden');
- const s=state,first=escapeHTML(firstName(s.user.name)),on=s.isClockedIn,entries=punchesToday(s);
+ const s=state,first=escapeHTML((s.user.preferredName || firstName(s.user.name))),on=s.isClockedIn,entries=punchesToday(s);
  const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'Clocked in':'Clocked out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
  $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome back, '+first+'.</h1><p class="sub">'+(entries.length?'You’re all set. Have a great day!':'A great day starts here.')+'</p><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More options</h2><div class="card" style="padding:0;overflow:hidden"><button class="link" id="pto">Request Time Off<small>Current Payroll Week</small></button><button class="link" id="history">View My Timecard<small>Daily Clock In And Clock Out Times</small></button></div>';
  $('punch').onclick=()=>punch(on?'OUT':'IN');$('pto').onclick=pto;$('history').onclick=history;
 }
 function showSuccess(kind,isFirst,at){
  document.getElementById('success-layer')?.remove();
- const first=escapeHTML(firstName(state.user.name));
+ const first=escapeHTML((state.user.preferredName || firstName(state.user.name)));
  const title=kind==='OUT'?'Clock Out Successful':kind==='IN'?'Clock In Successful':'Punch Recorded';
  const message=kind==='OUT'?'Recorded At '+fmt(at):isFirst?'Have A Great Day, '+first+'!':'Recorded At '+fmt(at);
  const layer=document.createElement('div');layer.id='success-layer';layer.className='success-layer';layer.setAttribute('role','status');
