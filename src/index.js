@@ -1,6 +1,6 @@
+import { handleAdmin } from './admin.js';
 
 const ZONE = 'America/Chicago';
-const ADMIN_ID = '194';
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 const fail = (message, status = 400) => json({ error: message }, status);
 const pad = n => String(n).padStart(2, '0');
@@ -89,10 +89,18 @@ export class Timeclock {
     this.db.exec('CREATE TABLE IF NOT EXISTS pto (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, hours REAL NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, reviewed_at TEXT)');
     this.db.exec('CREATE TABLE IF NOT EXISTS audit (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, action TEXT NOT NULL, detail TEXT NOT NULL, at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, at TEXT NOT NULL)');
+    this.db.exec('CREATE TABLE IF NOT EXISTS admins (id TEXT PRIMARY KEY, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TEXT NOT NULL)');
+    this.db.exec('CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires_at TEXT NOT NULL)');
+    this.db.exec('CREATE TABLE IF NOT EXISTS admin_attempts (id TEXT PRIMARY KEY, at TEXT NOT NULL)');
+    this.db.exec('CREATE TABLE IF NOT EXISTS employee_controls (id TEXT PRIMARY KEY, enabled INTEGER NOT NULL)');
   }
   one(sql, ...args) { return [...this.db.exec(sql, ...args)][0] || null; }
   all(sql, ...args) { return [...this.db.exec(sql, ...args)]; }
-  audit(action, detail) { this.db.exec('INSERT INTO audit (id,user_id,action,detail,at) VALUES (?,?,?,?,?)', uid(), ADMIN_ID, action, JSON.stringify(detail), new Date().toISOString()); }
+  audit(action, detail, actor='system') { this.db.exec('INSERT INTO audit (id,user_id,action,detail,at) VALUES (?,?,?,?,?)', uid(), actor, action, JSON.stringify(detail), new Date().toISOString()); }
+  calculate(punches, monday, today) { return compute(punches, monday, today); }
+  date(iso) { return localDate(iso); }
+  week(day) { return weekOf(day); }
+  endWeek(monday) { return endOfWeek(monday); }
   async session(req) {
     const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_session=([^;]+)/)?.[1];
     if (!token) return null;
@@ -108,17 +116,16 @@ export class Timeclock {
         const origin = req.headers.get('Origin');
         if (origin && origin !== url.origin) return fail('Invalid origin', 403);
       }
-      if (route === '/api/config') return json({ setupRequired: false, pilot: true });
+      if (route.startsWith('/api/admin/')) return handleAdmin(this, req);
+      if (route === '/api/config') return json({ pilot: true });
       if (route === '/api/login' && req.method === 'POST') {
         const data = await req.json();
         const id = String(data.id || '').trim();
-        if (id !== ADMIN_ID) return fail('Employee ID not enabled for the pilot', 403);
-        let user = this.one('SELECT id,name FROM users WHERE id=?', ADMIN_ID);
-        if (!user) {
-          this.db.exec('INSERT INTO users (id,name,salt,pin_hash,created_at) VALUES (?,?,?,?,?)', ADMIN_ID, 'Travis Nunn', '', '', new Date().toISOString());
-          user = this.one('SELECT id,name FROM users WHERE id=?', ADMIN_ID);
-        }
-        return await this.newSession(user.id);
+        if (!/^\d{1,12}$/.test(id)) return fail('Please enter a valid employee ID', 400);
+        const employee = this.one('SELECT id,name FROM users WHERE id=?', id);
+        const control = this.one('SELECT enabled FROM employee_controls WHERE id=?', id);
+        if (!employee || control?.enabled === 0) return fail('Employee ID not recognized. Please contact the office.', 401);
+        return this.newSession(employee.id);
       }
       if (route === '/api/logout' && req.method === 'POST') {
         const token = (req.headers.get('Cookie') || '').match(/(?:^|;\s*)cfi_session=([^;]+)/)?.[1];
@@ -147,7 +154,7 @@ export class Timeclock {
         const now = new Date().toISOString();
         const id = uid();
         this.db.exec('INSERT INTO punches (id,user_id,kind,at,created_at) VALUES (?,?,?,?,?)', id, user.id, kind, now, now);
-        this.audit('punch', { id, kind, at: now });
+        this.audit('punch', { id, kind, at: now }, user.id);
         return json({ ok: true, kind, at: now });
       }
       if (route === '/api/pto' && req.method === 'POST') {
@@ -158,42 +165,8 @@ export class Timeclock {
         if (this.one("SELECT id FROM pto WHERE user_id=? AND date=? AND status!='DENIED'", user.id, date)) return fail('A request already exists for that day', 409);
         const id = uid();
         this.db.exec('INSERT INTO pto (id,user_id,date,hours,status,created_at) VALUES (?,?,?,?,?,?)', id, user.id, date, hours, 'PENDING', new Date().toISOString());
-        this.audit('pto-request', { id, date, hours });
+        this.audit('pto-request', { id, date, hours }, user.id);
         return json({ ok: true });
-      }
-      // Administrative operation disabled during ID-only pilot.
-      if (route === '/api/pto-review') return fail('Admin actions require verified sign-in', 403);
-      if (route === '/api/pto-review' && req.method === 'POST') {
-        const data = await req.json(), status = String(data.status || '');
-        if (!['APPROVED','DENIED'].includes(status)) return fail('Invalid status');
-        const reqrow = this.one('SELECT * FROM pto WHERE id=? AND user_id=?', String(data.id || ''), user.id);
-        if (!reqrow) return fail('Request not found', 404);
-        this.db.exec('UPDATE pto SET status=?,reviewed_at=? WHERE id=?', status, new Date().toISOString(), reqrow.id);
-        this.audit('pto-reviewed', { id: reqrow.id, status });
-        return json({ ok: true });
-      }
-      // Administrative operation disabled during ID-only pilot.
-      if (route === '/api/punch-edit') return fail('Admin actions require verified sign-in', 403);
-      if (route === '/api/punch-edit' && req.method === 'POST') {
-        const data = await req.json();
-        const target = this.one('SELECT * FROM punches WHERE id=? AND user_id=?', String(data.id || ''), user.id);
-        if (!target) return fail('Punch not found', 404);
-        const parsed = new Date(String(data.at || ''));
-        if (!Number.isFinite(parsed.getTime()) || parsed.getTime() > Date.now() || weekOf(localDate(parsed.toISOString())) !== monday || localDate(target.at) !== localDate(parsed.toISOString())) return fail('Correction must stay on the original date in this payroll week');
-        const all = this.all('SELECT id,kind,at FROM punches WHERE user_id=? ORDER BY at ASC', user.id).map(p => p.id === target.id ? { ...p, at: parsed.toISOString() } : p).sort((a,b) => a.at.localeCompare(b.at));
-        for (let i=0; i<all.length; i++) if ((i > 0 && all[i].kind === all[i-1].kind) || (i===0 && all[i].kind!=='IN') || (i>0 && all[i].at <= all[i-1].at)) return fail('Correction would create overlapping or out-of-order punches');
-        const was = target.at;
-        this.db.exec('UPDATE punches SET at=?, corrected_at=? WHERE id=?', parsed.toISOString(), new Date().toISOString(), target.id);
-        this.audit('punch-corrected', { id: target.id, from: was, to: parsed.toISOString() });
-        return json({ ok: true });
-      }
-      // Administrative operation disabled during ID-only pilot.
-      if (route === '/api/export') return fail('Admin actions require verified sign-in', 403);
-      if (route === '/api/export' && req.method === 'GET') {
-        const data = compute(thisWeek(), monday, today);
-        const pto = this.all("SELECT hours FROM pto WHERE user_id=? AND date>=? AND date<=? AND status='APPROVED'", user.id, monday, sunday).reduce((a,x)=>a+x.hours,0);
-        const csv = ['Employee ID,Employee,Week Start,Regular Hours,Overtime Hours,Approved PTO,Worked Hours','"' + user.id + '","' + user.name.replaceAll('"','""') + '",' + monday + ',' + data.regularHours.toFixed(2) + ',' + data.overtimeHours.toFixed(2) + ',' + pto.toFixed(2) + ',' + data.workedHours.toFixed(2)].join('\r\n');
-        return new Response(csv,{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="cfi-timeclock-' + monday + '.csv"','Cache-Control':'no-store'}});
       }
       return fail('Not found', 404);
     } catch (e) { console.error(e); return fail('Unexpected error. Please try again.', 500); }
@@ -210,6 +183,10 @@ export class Timeclock {
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
+    if (url.pathname === '/admin' || url.pathname === '/admin/') {
+      const target = new URL('/admin/index.html', url.origin);
+      return env.ASSETS.fetch(new Request(target, req));
+    }
     if (url.pathname.startsWith('/api/')) {
       const id = env.CLOCK.idFromName('cfi-production');
       return env.CLOCK.get(id).fetch(req);
