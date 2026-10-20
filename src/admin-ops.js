@@ -95,10 +95,8 @@ export async function adminOps(store,request){
   const time=at.toISOString();
   const previous=store.all('SELECT kind,at FROM punches WHERE user_id=? ORDER BY at',employeeId);
   if(previous.some(p=>p.at===time))return error('A punch already exists at this exact time',409);
-  const combined=[...previous,{kind,at:time}].sort((a,b)=>a.at.localeCompare(b.at));
-  const index=combined.findIndex(p=>p.at===time);
-  if(index>0&&combined[index-1].kind===kind||index<combined.length-1&&combined[index+1].kind===kind)return error('Punches must alternate Clock In and Clock Out. Check adjacent punches first.');
-  if(index===0&&kind!=='IN')return error('First recorded punch must be Clock In.');
+  // Administrators may restore an incomplete historical shift in any order.
+  // Conflicting or unmatched punches are flagged by payroll review until resolved.
   const punchId=id(),now=new Date().toISOString();
   store.db.exec('INSERT INTO punches(id,user_id,kind,at,created_at,corrected_at) VALUES (?,?,?,?,?,?)',punchId,employeeId,kind,time,now,now);
   store.audit('admin-punch-added',{id:punchId,employeeId,kind,at:time},'admin');
