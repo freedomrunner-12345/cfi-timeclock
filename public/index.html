@@ -45,6 +45,23 @@ main.login-mode{min-height:100svh;display:flex;flex-direction:column;justify-con
 .option-button:focus-visible{outline:3px solid #b81025;outline-offset:3px}
 @media(min-width:700px){main.login-mode{min-height:100vh}}
 @media(max-height:700px){main.login-mode{justify-content:flex-start;padding-top:25px}.login-mode .top{margin-bottom:20px}}
+
+/* Large, on-screen keypad for shared employee tablets and phones. */
+.login-mode .signin-card{max-width:410px;width:100%;margin-inline:auto;padding:19px 22px 22px}
+.login-mode .signin-card h2{margin:0 0 16px;font-size:24px}
+.login-mode .top{margin-bottom:16px}
+.login-mode .emblem-crop{width:118px;height:118px}
+.login-mode .emblem-crop .real-logo{width:325px!important;height:118px!important;left:-36px}
+.keypad-display{display:flex;align-items:center;justify-content:center;width:100%;height:55px;background:#f7f7f9;border:1px solid #e7e7ec;border-radius:13px;color:#858792;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap;margin-bottom:12px}
+.keypad-display.has-value{color:#202127;font-size:27px;font-weight:750;letter-spacing:.10em}
+.keypad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.keypad-key{height:58px;border-radius:13px;border:1px solid #e3e3e9;background:#f6f6f8;color:#292a31;font-size:26px;font-weight:730;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.keypad-key:active{background:#e6e6eb;transform:scale(.98)}
+.keypad-key:focus-visible{outline:3px solid #b81025;outline-offset:1px}
+.keypad-utility{font-size:23px;background:#f6edef;color:#a8243d}
+.keypad-submit{margin-top:12px;min-height:54px;touch-action:manipulation}
+.keypad-submit:disabled{opacity:.45}
+@media(max-height:710px){main.login-mode{justify-content:flex-start;padding-top:14px}.login-mode .emblem-crop{width:94px;height:94px}.login-mode .emblem-crop .real-logo{width:259px!important;height:94px!important;left:-29px}.login-mode .top{margin-bottom:12px}.keypad-key{height:52px}.login-mode .signin-card{padding:15px 18px}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span></div><button id="signout" class="close hidden">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></header><div id="app"></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null;
@@ -87,8 +104,42 @@ async function api(path,data){const r=await fetch('/api/'+path,{method:data===un
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function modal(s){$('overlay').innerHTML='<div class="modal"><button id="close" class="close">×</button>'+s+'</div>';$('overlay').classList.remove('hidden');$('close').onclick=close;$('overlay').onclick=e=>{if(e.target===$('overlay'))close()}}
 function close(){$('overlay').classList.add('hidden')}
-function signin(){document.querySelector('main').classList.add('login-mode');document.querySelector('main').classList.remove('signed-in-mode');clearInterval(interval);stopCountdown();state=null;$('signout').classList.add('hidden');$('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><form id="login"><label class="field visually-hidden" for="id">Paychex Employee ID</label><input class="input" name="id" id="id" inputmode="numeric" required placeholder="Enter Paychex Employee ID"><button class="primary">Sign In</button></form><p class="muted">You Will Be Signed Out After 1 Minute Of Inactivity.</p></div>';$('login').onsubmit=async e=>{e.preventDefault();try{await api('login',{id:$('id').value});await load()}catch(e){toast(e.message)}}}
 
+function signin(){
+ document.querySelector('main').classList.add('login-mode');
+ document.querySelector('main').classList.remove('signed-in-mode');
+ clearInterval(interval);stopCountdown();state=null;
+ $('signout').classList.add('hidden');
+ const keys=['1','2','3','4','5','6','7','8','9','C','0','⌫'];
+ $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2>'
+  +'<form id="login" autocomplete="off"><label class="field visually-hidden" for="id">Paychex Employee ID</label>'
+  +'<input type="hidden" name="id" id="id">'
+  +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
+  +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
+  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="submit">Sign In</button></form></div>';
+ const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
+ function renderKeypad(){
+  const value=id.value;
+  display.textContent=value||'Enter Paychex Employee ID';
+  display.classList.toggle('has-value',!!value);
+  submit.disabled=!value;
+ }
+ $('app').querySelectorAll('[data-key]').forEach(button=>button.onclick=()=>{
+  const key=button.dataset.key;
+  if(key==='C')id.value='';
+  else if(key==='⌫')id.value=id.value.slice(0,-1);
+  else if(id.value.length<12)id.value+=key;
+  renderKeypad();
+ });
+ $('login').onsubmit=async event=>{
+  event.preventDefault();
+  const value=id.value;
+  if(!/^\\d{1,12}$/.test(value))return;
+  submit.disabled=true;
+  try{await api('login',{id:value});await load();}
+  catch(error){toast(error.message);renderKeypad();}
+ };
+}
 function firstName(name){const n=String(name||'').trim();return n.includes(',')?(n.split(',')[1]?.trim().split(/\s+/)[0]||'there'):(n.split(/\s+/)[0]||'there')}
 function punchesToday(s){return s.totals.days.find(d=>d.date===s.today)?.punches||[]}
 function render(){
