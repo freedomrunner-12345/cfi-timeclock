@@ -23,7 +23,26 @@ main{text-align:center;max-width:520px;padding:20px 18px 60px}.top{display:flex;
 #login .input::placeholder{text-align:center}
 .inactivity-label .countdown-number{color:#b81025;font-weight:800;font-variant-numeric:tabular-nums}
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-</style></head><body><main><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="brand-title">CFI Tire Service</span></div><button id="signout" class="close hidden">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></header><div id="app"></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
+
+/* Minimal centered employee experience */
+main.login-mode{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(32px,env(safe-area-inset-bottom))}
+.login-mode .top{margin:0 0 24px;min-height:0}
+.login-mode .brand{gap:0}
+.login-mode #app{width:100%}
+.login-mode .signin-card{margin-top:0;padding:30px 24px}
+.login-mode .signin-card h2{margin:6px 0 24px;font-size:24px}
+.signed-in-mode .brand{display:none!important}
+.signed-in-mode .top{margin:0 0 22px;min-height:0;gap:7px}
+.signed-in-mode{padding-top:max(20px,env(safe-area-inset-top))}
+.signed-in-mode .hello{margin:10px 0 24px}
+.option-actions{display:grid;grid-template-columns:1fr;gap:13px;margin:0}
+.option-button{display:block;width:100%;min-height:84px;background:#faeff1!important;border:1.5px solid #e9bfc6!important;border-radius:18px!important;box-shadow:0 4px 12px #5113240d;color:#832034!important;text-align:center;transition:background .15s ease,transform .15s ease}
+.option-button small{color:#806c73!important}
+.option-button:active{background:#f3dfe3!important;transform:scale(.99)}
+.option-button:focus-visible{outline:3px solid #b81025;outline-offset:3px}
+@media(min-width:700px){main.login-mode{min-height:100vh}}
+@media(max-height:700px){main.login-mode{justify-content:flex-start;padding-top:25px}.login-mode .top{margin-bottom:20px}}
+</style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span></div><button id="signout" class="close hidden">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></header><div id="app"></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null;
 let lastActivity=Date.now(), countdownTimer=null,lastPing=0,signingOut=false;
@@ -65,15 +84,16 @@ async function api(path,data){const r=await fetch('/api/'+path,{method:data===un
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function modal(s){$('overlay').innerHTML='<div class="modal"><button id="close" class="close">×</button>'+s+'</div>';$('overlay').classList.remove('hidden');$('close').onclick=close;$('overlay').onclick=e=>{if(e.target===$('overlay'))close()}}
 function close(){$('overlay').classList.add('hidden')}
-function signin(){clearInterval(interval);stopCountdown();state=null;$('signout').classList.add('hidden');$('app').innerHTML='<div class="eyebrow">EMPLOYEE ACCESS</div><h1 class="hello">Sign In</h1><p class="sub">Enter Your Employee ID.</p><div class="card"><h2>Employee Sign In</h2><form id="login"><label class="field visually-hidden" for="id">Paychex Employee ID</label><input class="input" name="id" id="id" inputmode="numeric" required placeholder="Enter Paychex Employee ID"><button class="primary">Sign In</button></form><p class="muted">You Will Be Signed Out After 1 Minute Of Inactivity.</p></div>';$('login').onsubmit=async e=>{e.preventDefault();try{await api('login',{id:$('id').value});await load()}catch(e){toast(e.message)}}}
+function signin(){document.querySelector('main').classList.add('login-mode');document.querySelector('main').classList.remove('signed-in-mode');clearInterval(interval);stopCountdown();state=null;$('signout').classList.add('hidden');$('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><form id="login"><label class="field visually-hidden" for="id">Paychex Employee ID</label><input class="input" name="id" id="id" inputmode="numeric" required placeholder="Enter Paychex Employee ID"><button class="primary">Sign In</button></form><p class="muted">You Will Be Signed Out After 1 Minute Of Inactivity.</p></div>';$('login').onsubmit=async e=>{e.preventDefault();try{await api('login',{id:$('id').value});await load()}catch(e){toast(e.message)}}}
 
 function firstName(name){const n=String(name||'').trim();return n.includes(',')?(n.split(',')[1]?.trim().split(/\s+/)[0]||'there'):(n.split(/\s+/)[0]||'there')}
 function punchesToday(s){return s.totals.days.find(d=>d.date===s.today)?.punches||[]}
 function render(){
+ document.querySelector('main').classList.remove('login-mode');document.querySelector('main').classList.add('signed-in-mode');
  $('signout').classList.remove('hidden');
  const s=state,first=escapeHTML((s.user.preferredName || firstName(s.user.name))),on=s.isClockedIn,entries=punchesToday(s);
  const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'Clocked in':'Clocked out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
- $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome back, '+first+'.</h1><p class="sub">'+(entries.length?'You’re all set. Have a great day!':'A great day starts here.')+'</p><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More options</h2><div class="card" style="padding:0;overflow:hidden"><button class="link" id="pto">Request Time Off<small>Current Payroll Week</small></button><button class="link" id="history">View My Timecard<small>Daily Clock In And Clock Out Times</small></button></div>';
+ $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">'+first+'</h1><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s Punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More Options</h2><div class="option-actions"><button class="link option-button" id="pto">Request Time Off<small>Current Payroll Week</small></button><button class="link option-button" id="history">View My Timecard<small>Daily Clock In And Clock Out Times</small></button></div>';
  $('punch').onclick=()=>punch(on?'OUT':'IN');$('pto').onclick=pto;$('history').onclick=history;
 }
 function showSuccess(kind,isFirst,at){
