@@ -39,7 +39,7 @@ main.login-mode{min-height:100svh;display:flex;flex-direction:column;justify-con
 @media(max-height:900px){.signed-in-mode{justify-content:flex-start}}
 .signed-in-mode .hello{margin:10px 0 24px}
 .option-actions{display:grid;grid-template-columns:1fr;gap:13px;margin:0}
-.option-button{display:block;width:100%;min-height:84px;background:#faeff1!important;border:1.5px solid #e9bfc6!important;border-radius:18px!important;box-shadow:0 4px 12px #5113240d;color:#832034!important;text-align:center;transition:background .15s ease,transform .15s ease}
+.option-button{display:block;width:100%;min-height:64px;background:#faeff1!important;border:1.5px solid #e9bfc6!important;border-radius:18px!important;box-shadow:0 4px 12px #5113240d;color:#832034!important;text-align:center;transition:background .15s ease,transform .15s ease}
 .option-button small{color:#806c73!important}
 .option-button:active{background:#f3dfe3!important;transform:scale(.99)}
 .option-button:focus-visible{outline:3px solid #b81025;outline-offset:3px}
@@ -147,7 +147,7 @@ function render(){
  $('signout').classList.remove('hidden');
  const s=state,first=escapeHTML((s.user.preferredName || firstName(s.user.name))),on=s.isClockedIn,entries=punchesToday(s);
  const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'Clocked in':'Clocked out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
- $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s Punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More Options</h2><div class="option-actions"><button class="link option-button" id="pto">Request Time Off<small>Current Payroll Week</small></button><button class="link option-button" id="history">View My Timecard<small>Daily Clock In And Clock Out Times</small></button></div>';
+ $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s Punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More Options</h2><div class="option-actions"><button class="link option-button" id="pto">Request Time Off</button><button class="link option-button" id="history">View My Timecard</button></div>';
  $('punch').onclick=()=>punch(on?'OUT':'IN');$('pto').onclick=pto;$('history').onclick=history;
 }
 function showSuccess(kind,isFirst,at){
