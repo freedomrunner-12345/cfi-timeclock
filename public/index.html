@@ -34,6 +34,9 @@ main.login-mode{min-height:100svh;display:flex;flex-direction:column;justify-con
 .signed-in-mode .brand{display:none!important}
 .signed-in-mode .top{margin:0 0 22px;min-height:0;gap:7px}
 .signed-in-mode{padding-top:max(20px,env(safe-area-inset-top))}
+.signed-in-mode{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-bottom:max(30px,env(safe-area-inset-bottom))}
+.signed-in-mode #app{width:100%}
+@media(max-height:900px){.signed-in-mode{justify-content:flex-start}}
 .signed-in-mode .hello{margin:10px 0 24px}
 .option-actions{display:grid;grid-template-columns:1fr;gap:13px;margin:0}
 .option-button{display:block;width:100%;min-height:84px;background:#faeff1!important;border:1.5px solid #e9bfc6!important;border-radius:18px!important;box-shadow:0 4px 12px #5113240d;color:#832034!important;text-align:center;transition:background .15s ease,transform .15s ease}
