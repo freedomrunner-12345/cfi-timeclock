@@ -98,6 +98,35 @@ function deletePunch(employee,punchId){
   }catch(err){alertUser(err.message);button.disabled=false}
  };
 }
-function edit(e,id){const p=e.punches.find(x=>x.id===id);if(!p)return;pop('<h2>Correct punch</h2><p class="muted">'+safe(e.name)+' · '+(p.kind==='IN'?'Clock In':'Clock Out')+'</p><form id="correction"><label class="label">Date and time (Central)</label><input class="input" type="datetime-local" id="when" value="'+central(p.at)+'" required><button class="btn red">Save correction</button></form><div class="warn">Confirm the corrected time against the original record. This change will appear in the audit trail.</div>');$('correction').onsubmit=async ev=>{ev.preventDefault();if(!confirm('Save this punch correction?'))return;try{await api('punch-edit',{id,at:parseCentral($('when').value)});hide();await refresh();alertUser('Punch corrected')}catch(err){alertUser(err.message)}}}
+function edit(e,id){
+ const p=e.punches.find(x=>x.id===id);
+ if(!p)return;
+ pop('<h2>Edit Punch</h2><p class="muted">'+safe(e.name)+'</p>'
+  +'<form id="correction">'
+  +'<label class="label" for="editKind">Punch Type</label>'
+  +'<select class="input" id="editKind"><option value="IN" '+(p.kind==='IN'?'selected':'')+'>Clock In</option><option value="OUT" '+(p.kind==='OUT'?'selected':'')+'>Clock Out</option></select>'
+  +'<label class="label" for="when">Date And Time (Central)</label>'
+  +'<input class="input" type="datetime-local" id="when" value="'+central(p.at)+'" required>'
+  +'<button class="btn red" id="saveCorrection" type="submit">Save Changes</button></form>'
+  +'<div class="info">You can correct the punch type, time, or both. Unmatched punches will be flagged for review, and the original values will remain in the audit log.</div>');
+ $('correction').onsubmit=async ev=>{
+  ev.preventDefault();
+  const button=$('saveCorrection');
+  const kind=$('editKind').value;
+  const newTime=$('when').value;
+  const at=parseCentral(newTime);
+  if(!at){alertUser('Enter a valid date and time');return;}
+  const original=p.kind==='IN'?'Clock In':'Clock Out';
+  const updated=kind==='IN'?'Clock In':'Clock Out';
+  if(!confirm('Save changes to this punch?\nOriginal: '+original+' · '+time(p.at)+'\nUpdated: '+updated+' · '+newTime.replace('T',' ')) )return;
+  button.disabled=true;
+  try{
+   await api('punch-edit',{id,kind,at});
+   hide();
+   await refresh();
+   alertUser('Punch Updated');
+  }catch(err){alertUser(err.message);button.disabled=false;}
+ };
+}
 start();
 </script></body></html>
