@@ -33,50 +33,71 @@ function compute(punches, monday, today) {
   const grouped = {};
   for (const p of punches) {
     const day = localDate(p.at);
-    if (!grouped[day]) grouped[day] = [];
-    grouped[day].push(p);
+    (grouped[day] ||= []).push(p);
   }
   const days = [];
-  let weeklyMinutes = 0, warnings = [];
+  const warnings = [];
+  let weeklyMinutes = 0;
   for (let offset = 0; offset < 7; offset++) {
-    const d = new Date(monday + 'T12:00:00Z');
-    d.setUTCDate(d.getUTCDate() + offset);
-    const day = d.toISOString().slice(0, 10);
-    const entries = (grouped[day] || []).sort((a, b) => a.at.localeCompare(b.at));
-    let totalMs = 0, gaps = [], needsReview = false, clockIn = null, lastOut = null;
+    const date = new Date(monday + 'T12:00:00Z');
+    date.setUTCDate(date.getUTCDate() + offset);
+    const day = date.toISOString().slice(0, 10);
+    const entries = (grouped[day] || []).sort((a,b) => a.at.localeCompare(b.at));
+    const issues = [];
+    const completed = [];
+    const breakDurations = [];
+    let openIn = null;
+    let previousOut = null;
+    let pairedBreaks = 0;
     for (let i = 0; i < entries.length; i++) {
-      const p = entries[i];
-      if (p.kind === 'IN') {
-        if (clockIn !== null) needsReview = true;
-        clockIn = p.at;
-        if (lastOut !== null) {
-          const gapMs = new Date(p.at) - new Date(lastOut);
-          if (gapMs < 0) needsReview = true;
-          else gaps.push(gapMs);
-          lastOut = null;
+      const punch = entries[i];
+      if (punch.kind === 'IN') {
+        if (openIn !== null) {
+          issues.push('Two consecutive Clock In punches — a Clock Out may be missing.');
+          // Do not overwrite the first Clock In or infer a shift from a conflicting pair.
+          openIn = null;
+          previousOut = null;
+          continue;
         }
+        if (previousOut !== null) {
+          const duration = new Date(punch.at) - new Date(previousOut);
+          if (duration > 0) {
+            breakDurations.push(duration);
+            pairedBreaks++;
+          } else issues.push('Break times are out of order.');
+        }
+        openIn = punch.at;
+        previousOut = null;
+      } else if (punch.kind === 'OUT') {
+        if (openIn === null) {
+          issues.push('Clock Out has no matching Clock In.');
+          previousOut = null;
+          continue;
+        }
+        const duration = new Date(punch.at) - new Date(openIn);
+        if (duration <= 0) issues.push('Clock Out must be later than Clock In.');
+        else completed.push(duration);
+        openIn = null;
+        previousOut = punch.at;
       } else {
-        if (clockIn === null) needsReview = true;
-        else {
-          const ms = new Date(p.at) - new Date(clockIn);
-          if (ms < 0) needsReview = true;
-          else totalMs += ms;
-        }
-        clockIn = null;
-        lastOut = p.at;
+        issues.push('Unrecognized punch type.');
       }
     }
-    if (clockIn !== null) needsReview = true;
-    // Every second work interval confirms an intervening first lunch break.
-    // Award 30 minutes once per day only when the first out/in gap is completed.
-    const lunchCredit = gaps.length ? 30 : 0;
-    const minutes = Math.max(0, totalMs / 60000 + lunchCredit);
+    if (openIn !== null) issues.push('Clock In has no matching Clock Out.');
+    // Display and retain safe completed intervals, but never present
+    // conflicting or incomplete days as finalized payroll.
+    const lunchCredit = pairedBreaks ? 30 : 0;
+    const minutes = Math.max(0, completed.reduce((sum,ms)=>sum+ms,0)/60000 + lunchCredit);
     weeklyMinutes += minutes;
-    if (needsReview) warnings.push(day);
-    days.push({ date: day, minutes: Math.round(minutes * 100) / 100, lunchCredit, breaks: gaps.map(ms => Math.round(ms / 60000)), punches: entries, needsReview });
+    if (issues.length) warnings.push(day);
+    days.push({ date:day, minutes:Math.round(minutes*100)/100, lunchCredit,
+      breaks:breakDurations.map(ms=>Math.round(ms/60000)),punches:entries,
+      needsReview:issues.length>0, issues });
   }
-  const roundedHours = Math.round(weeklyMinutes / 15) / 4;
-  return { days, weeklyMinutes: Math.round(weeklyMinutes * 100) / 100, workedHours: roundedHours, regularHours: Math.min(40, roundedHours), overtimeHours: Math.max(0, roundedHours - 40), warnings };
+  const roundedHours = Math.round(weeklyMinutes/15)/4;
+  return {days,weeklyMinutes:Math.round(weeklyMinutes*100)/100,workedHours:roundedHours,
+    regularHours:Math.min(40,roundedHours),overtimeHours:Math.max(0,roundedHours-40),
+    warnings,needsReview:warnings.length>0};
 }
 export class Timeclock {
   constructor(ctx, env) {
