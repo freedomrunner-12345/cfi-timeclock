@@ -118,7 +118,12 @@ function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden')
 function modal(s){$('overlay').innerHTML='<div class="modal"><button id="close" class="close">×</button>'+s+'</div>';$('overlay').classList.remove('hidden');$('close').onclick=close;$('overlay').onclick=e=>{if(e.target===$('overlay'))close()}}
 function close(){$('overlay').classList.add('hidden')}
 
+function preserveSessionControls(){
+ const controls=$('sessionControls');
+ if(controls&&controls.parentElement===$('app'))document.querySelector('main').appendChild(controls);
+}
 function signin(){
+ preserveSessionControls();
  document.querySelector('main').classList.add('login-mode');
  document.querySelector('main').classList.remove('signed-in-mode');
  clearInterval(interval);stopCountdown();state=null;
@@ -168,6 +173,7 @@ function signin(){
 function firstName(name){const n=String(name||'').trim();return n.includes(',')?(n.split(',')[1]?.trim().split(/\s+/)[0]||'there'):(n.split(/\s+/)[0]||'there')}
 function punchesToday(s){return s.totals.days.find(d=>d.date===s.today)?.punches||[]}
 function render(){
+ preserveSessionControls();
  document.querySelector('main').classList.remove('login-mode');document.querySelector('main').classList.add('signed-in-mode');
  $('signout').classList.remove('hidden');$('sessionControls').classList.remove('hidden');
  const s=state,first=escapeHTML((s.user.preferredName || firstName(s.user.name))),on=s.isClockedIn,entries=punchesToday(s);
