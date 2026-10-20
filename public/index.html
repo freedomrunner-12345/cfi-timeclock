@@ -138,6 +138,51 @@ main.welcome-mode{position:relative;width:100%;max-width:none;height:100svh;min-
 .welcome-moving-title{display:block;text-align:center;}
 .welcome-moving-logo .emblem-crop{display:block;width:100%;height:100%}
 @media(prefers-reduced-motion:reduce){.welcome-transition-snapshot,.welcome-moving-logo{display:none!important}}
+
+/* Employee-facing readability pass: approximately 20% larger text.
+   Preserve clear hierarchy and readable narrow-screen wrapping. */
+.welcome-center strong{font-size:clamp(38px,8.4vw,58px)}
+.welcome-prompt{font-size:clamp(21px,4.8vw,28px)}
+.login-brand-caption{font-size:24px}
+.login-mode .signin-card h2{font-size:29px;line-height:1.18}
+.login-mode .keypad-display{font-size:20px;padding:0 8px;white-space:normal;text-align:center;line-height:1.15;min-height:59px}
+.login-mode .keypad-display.has-value{font-size:32px}
+.login-mode .keypad-key{font-size:31px}
+.login-mode .keypad-utility{font-size:27px}
+.login-mode .keypad-submit{font-size:clamp(19px,5vw,23px)}
+.login-mode .login-error{font-size:18px}
+.employee-greeting .eyebrow{font-size:16px}
+.employee-greeting .hello{font-size:clamp(29px,7.2vw,40px);line-height:1.15}
+.status-line{font-size:18px}
+.main-clock-button{font-size:clamp(32px,8.4vw,42px)}
+.clock-arrow{font-size:39px}
+.last-punch{font-size:17px}
+.quiet-heading{font-size:18px}
+.compact-punches .punch-entry{font-size:19px}
+.compact-punches .punch-label{min-width:39px}
+.compact-punches .punch-time{font-size:21px}
+.daily-section .empty{font-size:18px}
+.clock-home .option-button{font-size:18px;min-height:96px;padding:12px 8px}
+#app .session-controls #signout{font-size:18px!important;min-height:42px!important}
+#app .session-controls .inactivity-label{font-size:14px}
+.success-title{font-size:clamp(31px,7.6vw,37px)}
+.success-sub{font-size:21px}
+.success-done{font-size:22px}
+.modal h2{font-size:clamp(25px,6vw,32px)}
+.modal .sub,.modal .field,.modal .info,.modal .row{font-size:clamp(18px,4.6vw,21px)}
+.modal .input,.modal select,.modal .primary{font-size:19px}
+@media(max-width:360px){
+ .employee-greeting .hello{font-size:clamp(26px,7vw,32px)}
+ .clock-home .option-button{font-size:16px;min-height:89px}
+ .login-mode .keypad-key{font-size:29px}
+}
+@media(max-height:710px){
+ .login-mode .keypad-key{height:50px}
+ .login-mode .signin-card{padding:14px 18px 16px}
+ .login-mode .signin-card h2{margin-bottom:12px}
+ .login-mode .keypad-display{min-height:52px;margin-bottom:9px}
+ .login-mode .keypad-submit{min-height:48px}
+}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
