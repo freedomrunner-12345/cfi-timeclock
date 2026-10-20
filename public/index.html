@@ -134,7 +134,7 @@ function signin(){
  $('login').onsubmit=async event=>{
   event.preventDefault();
   const value=id.value;
-  if(!/^\\d{1,12}$/.test(value))return;
+  if(!/^\d{1,12}$/.test(value))return;
   submit.disabled=true;
   try{await api('login',{id:value});await load();}
   catch(error){toast(error.message);renderKeypad();}
