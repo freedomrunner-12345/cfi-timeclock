@@ -70,6 +70,11 @@ main.login-mode{min-height:100svh;display:flex;flex-direction:column;justify-con
 .session-controls .inactivity-label{margin-top:0;font-size:15px}
 .signed-in-mode .top{display:none}
 .signed-in-mode #app{flex:0 0 auto}
+
+/* Sign Out belongs to the final section, not the top navigation. */
+#app .session-controls{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;margin:25px 0 0;padding:0 0 12px}
+#app .session-controls #signout{margin:0 auto!important;min-width:210px}
+#app .session-controls #inactivity{margin:0}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null;
@@ -168,6 +173,9 @@ function render(){
  const s=state,first=escapeHTML((s.user.preferredName || firstName(s.user.name))),on=s.isClockedIn,entries=punchesToday(s);
  const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'Clocked in':'Clocked out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
  $('app').innerHTML='<div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1><div class="card punch"><span class="pill '+(on?'':'off')+'">'+(on?'● CURRENTLY CLOCKED IN':'● CURRENTLY CLOCKED OUT')+'</span><div class="actions"><button class="action active" id="punch">'+(on?'↑ Clock Out':'↓ Clock In')+'</button></div></div><h2 class="today-title">Today’s Punches</h2><div class="card today-card">'+(list||'<div class="empty">No Punches Recorded Today.</div>')+'</div><h2 class="section">More Options</h2><div class="option-actions"><button class="link option-button" id="pto">Request Time Off</button><button class="link option-button" id="history">View My Timecard</button></div>';
+ // Physically place the Sign Out button and countdown after the final action.
+ // Moving the existing nodes preserves their click and countdown handlers.
+ $('app').appendChild($('sessionControls'));
  $('punch').onclick=()=>punch(on?'OUT':'IN');$('pto').onclick=pto;$('history').onclick=history;
 }
 function showSuccess(kind,isFirst,at){
