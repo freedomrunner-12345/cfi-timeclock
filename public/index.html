@@ -135,6 +135,7 @@ main.welcome-mode{position:relative;width:100%;max-width:none;height:100svh;min-
 /* Seamless CFI emblem morph and ambient color transition to the numeric keypad. */
 .welcome-transition-snapshot{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;z-index:10001!important;pointer-events:none!important;margin:0!important}
 .welcome-moving-logo{display:block;filter:drop-shadow(0 0 35px #b810253c)}
+.welcome-moving-title{display:block;text-align:center;}
 .welcome-moving-logo .emblem-crop{display:block;width:100%;height:100%}
 @media(prefers-reduced-motion:reduce){.welcome-transition-snapshot,.welcome-moving-logo{display:none!important}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
@@ -198,38 +199,52 @@ function transitionToSignin(){
  if(!welcomeScreen||document.querySelector('.welcome-transition-snapshot'))return;
  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){signin();return;}
  const source=welcomeScreen.querySelector('.welcome-mark');
- if(!source){signin();return;}
+ const titleSource=welcomeScreen.querySelector('.welcome-center strong');
+ if(!source||!titleSource){signin();return;}
  const from=source.getBoundingClientRect();
+ const titleFrom=titleSource.getBoundingClientRect();
  const snapshot=welcomeScreen.cloneNode(true);
  snapshot.removeAttribute('id');
  snapshot.classList.add('welcome-transition-snapshot');
  snapshot.querySelector('.welcome-mark')?.remove();
+ snapshot.querySelector('.welcome-center strong')?.remove();
  snapshot.setAttribute('aria-hidden','true');
  const movingLogo=source.cloneNode(true);
  movingLogo.classList.add('welcome-moving-logo');
  movingLogo.setAttribute('aria-hidden','true');
  Object.assign(movingLogo.style,{position:'fixed',left:from.left+'px',top:from.top+'px',width:from.width+'px',height:from.height+'px',margin:'0',transformOrigin:'top left',zIndex:'10002',pointerEvents:'none'});
+ const movingTitle=titleSource.cloneNode(true);
+ movingTitle.classList.add('welcome-moving-title');
+ movingTitle.setAttribute('aria-hidden','true');
+ const titleFont=getComputedStyle(titleSource);
+ Object.assign(movingTitle.style,{position:'fixed',left:titleFrom.left+'px',top:titleFrom.top+'px',width:titleFrom.width+'px',height:titleFrom.height+'px',margin:'0',fontSize:titleFont.fontSize,fontWeight:titleFont.fontWeight,letterSpacing:titleFont.letterSpacing,lineHeight:titleFont.lineHeight,color:'#ffffff',whiteSpace:'nowrap',transformOrigin:'top left',zIndex:'10002',pointerEvents:'none'});
  document.body.appendChild(snapshot);
  document.body.appendChild(movingLogo);
+ document.body.appendChild(movingTitle);
  signin();
  const destination=document.querySelector('.login-mode .top .emblem-crop');
- if(!destination){snapshot.remove();movingLogo.remove();return;}
- const to=destination.getBoundingClientRect();
- destination.style.visibility='hidden';
- const card=document.querySelector('.login-mode .signin-card');
  const brandText=document.querySelector('.login-mode .login-brand-caption');
- const scaleX=to.width/from.width,scaleY=to.height/from.height;
+ if(!destination||!brandText){snapshot.remove();movingLogo.remove();movingTitle.remove();return;}
+ const to=destination.getBoundingClientRect();
+ const titleTo=brandText.getBoundingClientRect();
+ destination.style.visibility='hidden';
+ brandText.style.visibility='hidden';
+ const card=document.querySelector('.login-mode .signin-card');
  const easing='cubic-bezier(.22,1,.36,1)';
  const logoAnimation=movingLogo.animate([
    {transform:'translate3d(0,0,0) scale(1,1)',opacity:1},
-   {transform:'translate3d('+(to.left-from.left)+'px,'+(to.top-from.top)+'px,0) scale('+scaleX+','+scaleY+')',opacity:1}
+   {transform:'translate3d('+(to.left-from.left)+'px,'+(to.top-from.top)+'px,0) scale('+(to.width/from.width)+','+(to.height/from.height)+')',opacity:1}
+ ],{duration:740,easing,fill:'forwards'});
+ const finalColor=getComputedStyle(brandText).color;
+ const titleAnimation=movingTitle.animate([
+   {transform:'translate3d(0,0,0) scale(1,1)',color:'#ffffff',opacity:1},
+   {transform:'translate3d('+(titleTo.left-titleFrom.left)+'px,'+(titleTo.top-titleFrom.top)+'px,0) scale('+(titleTo.width/titleFrom.width)+','+(titleTo.height/titleFrom.height)+')',color:finalColor,opacity:1}
  ],{duration:740,easing,fill:'forwards'});
  const backgroundAnimation=snapshot.animate([{opacity:1},{opacity:1,offset:.13},{opacity:0}],{duration:670,easing:'ease-in-out',fill:'forwards'});
  const entrance=[];
  if(card)entrance.push(card.animate([{opacity:0,transform:'translateY(24px) scale(.98)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:530,delay:180,easing,fill:'both'}));
- if(brandText)entrance.push(brandText.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:410,delay:300,easing,fill:'both'}));
- const cleanup=()=>{destination.style.visibility='';snapshot.remove();movingLogo.remove();};
- Promise.allSettled([logoAnimation.finished,backgroundAnimation.finished,...entrance.map(a=>a.finished)]).then(cleanup,cleanup);
+ const cleanup=()=>{destination.style.visibility='';brandText.style.visibility='';snapshot.remove();movingLogo.remove();movingTitle.remove();};
+ Promise.allSettled([logoAnimation.finished,titleAnimation.finished,backgroundAnimation.finished,...entrance.map(a=>a.finished)]).then(cleanup,cleanup);
 }
 function signin(){
  clearKeypadIdle();
