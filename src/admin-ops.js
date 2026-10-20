@@ -114,14 +114,22 @@ export async function adminOps(store,request){
   return result({ok:true,deleted:1});
  }
  if(route==='/api/admin/punch-edit'&&method==='POST'){
-  const data=await request.json(),entry=store.one('SELECT id,user_id,kind,at FROM punches WHERE id=?',String(data.id||''));
+  const data=await request.json();
+  const entry=store.one('SELECT id,user_id,kind,at FROM punches WHERE id=?',String(data.id||''));
   if(!entry)return error('Punch not found',404);
   const next=validStamp(data.at);
+  const kind=String(data.kind??'');
+  if(!['IN','OUT'].includes(kind))return error('Choose Clock In or Clock Out');
   if(!next||store.date(next.toISOString())!==store.date(entry.at))return error('Correction must remain on the original workday');
-  const list=store.all('SELECT id,kind,at FROM punches WHERE user_id=? ORDER BY at',entry.user_id).map(p=>p.id===entry.id?{...p,at:next.toISOString()}:p).sort((a,b)=>a.at.localeCompare(b.at));
-  for(let i=0;i<list.length;i++)if((i>0&&list[i].kind===list[i-1].kind)||(i===0&&list[i].kind!=='IN')||(i>0&&list[i].at<=list[i-1].at))return error('Punch would overlap or be out of order');
-  store.db.exec('UPDATE punches SET at=?,corrected_at=? WHERE id=?',next.toISOString(),new Date().toISOString(),entry.id);
-  store.audit('punch-corrected',{id:entry.id,employeeId:entry.user_id,from:entry.at,to:next.toISOString()},'admin');
+  const time=next.toISOString();
+  const conflict=store.one('SELECT id FROM punches WHERE user_id=? AND at=? AND id!=?',entry.user_id,time,entry.id);
+  if(conflict)return error('Another punch already exists at this exact time',409);
+  if(time===entry.at&&kind===entry.kind)return result({ok:true,unchanged:true});
+  // Corrections may temporarily create unmatched or consecutive punch types.
+  // The timecard calculation flags these sequences for payroll review.
+  store.db.exec('UPDATE punches SET at=?,kind=?,corrected_at=? WHERE id=?',time,kind,new Date().toISOString(),entry.id);
+  store.audit('punch-corrected',{id:entry.id,employeeId:entry.user_id,from:{kind:entry.kind,at:entry.at},to:{kind,at:time}},'admin');
+  store.db.exec('DELETE FROM sessions WHERE user_id=?',entry.user_id);
   return result({ok:true});
  }
  if(route==='/api/admin/export'&&method==='GET'){
