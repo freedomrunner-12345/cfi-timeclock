@@ -295,6 +295,46 @@ main.signed-in-mode{min-height:100svh;justify-content:center;padding:32px 18px m
  .clock-home .questions-clock{margin-top:8px}
  #app .session-controls{margin-top:8px}
 }
+
+/* Keep the wall-tablet sign-in keypad stationary and fully tappable. */
+html:has(main.login-mode),body:has(main.login-mode){height:100%;overflow:hidden;overscroll-behavior:none}
+main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:hidden;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;padding:clamp(8px,2.2dvh,22px) 18px;touch-action:pan-x}
+.login-mode .top{flex:0 0 auto;margin-bottom:clamp(5px,1.8dvh,15px)}
+.login-mode #app{flex:0 0 auto;width:100%;min-height:0}
+.login-mode .signin-card{margin-top:0;padding:clamp(12px,2dvh,20px) 20px}
+.login-mode .signin-card h2{margin:0 0 clamp(7px,1.7dvh,15px)}
+.login-mode .keypad{gap:clamp(5px,1dvh,8px)}
+.login-mode .keypad-key{height:clamp(40px,6.6dvh,58px)}
+.login-mode .keypad-display{min-height:clamp(46px,6.5dvh,62px);margin-bottom:clamp(7px,1.2dvh,12px)}
+.login-mode .keypad-submit{min-height:clamp(44px,6dvh,54px);margin-top:clamp(8px,1.2dvh,12px)}
+.login-mode .questions-signin{margin:clamp(5px,1dvh,10px) 0 0}
+.login-mode .questions-link{min-height:38px;padding:5px 12px}
+@media(max-height:790px){
+ .login-mode .emblem-crop{width:88px;height:88px}
+ .login-mode .emblem-crop .real-logo{width:243px!important;height:88px!important;left:-27px!important}
+ .login-mode .brand{gap:6px!important}
+ .login-mode .login-brand-caption{font-size:21px}
+ .login-mode .signin-card h2{font-size:25px}
+ .login-mode .keypad-display{font-size:17px}
+ .login-mode .keypad-key{font-size:27px}
+}
+@media(max-height:610px){
+ main.login-mode{justify-content:flex-start;padding:5px 14px}
+ .login-mode .top{margin-bottom:4px}
+ .login-mode .emblem-crop{width:58px;height:58px}
+ .login-mode .emblem-crop .real-logo{width:160px!important;height:58px!important;left:-18px!important}
+ .login-mode .login-brand-caption{font-size:17px}
+ .login-mode .signin-card{padding:8px 14px}
+ .login-mode .signin-card h2{font-size:20px;margin:0 0 6px}
+ .login-mode .keypad-key{height:38px;font-size:23px}
+ .login-mode .keypad-display{min-height:39px}
+ .login-mode .keypad-submit{min-height:39px}
+ .login-mode .questions-signin{margin:2px 0}
+ .login-mode .questions-link{min-height:34px;font-size:16px}
+}
+/* Give the countdown a genuine bottom margin without shifting the main button upward. */
+#app .session-controls{padding-bottom:clamp(34px,5dvh,62px)!important}
+@media(max-height:790px){#app .session-controls{padding-bottom:28px!important}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -342,14 +382,15 @@ function close(){$('overlay').classList.add('hidden')}
 
 // QR data encoded for sms:+15313890178, without relying on third-party services.
 function contactQrSvg(){
- const bits=Array.from('1fd4e7f82df20dd6f176e96ebb756a5d8226a0ff555fc0108013fdc97e81bcb2395fd5766c0b368ec0c4695a7f7186e853aad0ef3ff0091887f775460b522375ebf1baccb3dd2a84e09754ffd3b51',h=>parseInt(h,16).toString(2).padStart(4,'0')).join('').slice(-625);
+ // Valid 21x21 QR encoded for SMSTO:15313890178: (SMS recipient only).
+ const bits='111111101010001111111100000100111101000001101110100011001011101101110101010101011101101110101100101011101100000101001001000001111111101010101111111000000001111100000000100010111011011111001010100001100111100010100111111101010111100100001010001011111000011110100110110011111000000001100101000101111111101000001100110100000100100010111010101110101110001001110101110100111101100011101110100111000100000100000100001100011001111111101110001000111';
  let squares='';
- for(let y=0;y<25;y++)for(let x=0;x<25;x++)if(bits[y*25+x]==='1')squares+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 33 33" aria-label="Scan to text Travis" role="img"><rect x="-4" y="-4" width="33" height="33" fill="#fff"/><g fill="#111116">'+squares+'</g></svg>';
+ for(let y=0;y<21;y++)for(let x=0;x<21;x++)if(bits[y*21+x]==='1')squares+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 29 29" aria-label="Scan QR to text Travis" role="img"><rect x="-4" y="-4" width="29" height="29" fill="#fff"/><g fill="#111116">'+squares+'</g></svg>';
 }
 function questionsLink(){return '<button type="button" class="questions-link" data-questions aria-label="Questions? Text Travis">Questions? <span aria-hidden="true">→</span></button>'}
 function showQuestions(){
- modal('<div class="questions-modal"><h2>Questions?</h2><p class="questions-description">Scan with your phone to text Travis.</p><div class="questions-qr">'+contactQrSvg()+'</div><a class="questions-sms" href="sms:+15313890178">Open Text Message →</a><p class="questions-number">To: (531) 389-0178</p></div>');
+ modal('<div class="questions-modal"><h2>Questions?</h2><p class="questions-description">Scan this QR code with your phone to text Travis.</p><div class="questions-qr">'+contactQrSvg()+'</div><p class="questions-number">To: (531) 389-0178</p></div>');
 }
 function wireQuestions(){document.querySelectorAll('[data-questions]').forEach(b=>b.onclick=showQuestions)}
 function preserveSessionControls(){
