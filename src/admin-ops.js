@@ -10,15 +10,21 @@ export async function adminOps(store,request){
  const asked=url.searchParams.get('week');
  const week=asked&&/^\d{4}-\d{2}-\d{2}$/.test(asked)&&store.week(asked)===asked?asked:store.week(today);
  const sunday=store.endWeek(week);
+ // Initialize the specifically designated tester account once, without altering punch history.
+ store.db.exec('CREATE TABLE IF NOT EXISTS app_migrations (key TEXT PRIMARY KEY)');
+ if(!store.one('SELECT key FROM app_migrations WHERE key=?','tester-initial-v1')){
+  store.db.exec('UPDATE users SET is_tester=1 WHERE id=? AND name=?','194','Nunn, Travis L');
+  store.db.exec('INSERT INTO app_migrations(key) VALUES (?)','tester-initial-v1');
+ }
  if(route==='/api/admin/state'&&method==='GET'){
-  const users=store.all('SELECT id,name,preferred_name FROM users ORDER BY name COLLATE NOCASE');
+  const users=store.all('SELECT id,name,preferred_name,is_tester FROM users WHERE is_archived=0 ORDER BY name COLLATE NOCASE');
   const employeeData=users.map(u=>{
    const flag=store.one('SELECT enabled FROM employee_controls WHERE id=?',u.id);
    const punches=punchesFor(store,u.id,week);
    const totals=store.calculate(punches,week,today);
    const requests=store.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date',u.id,week,sunday);
    const approvedPto=requests.filter(p=>p.status==='APPROVED').reduce((sum,p)=>sum+p.hours,0);
-   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',enabled:flag?.enabled!==0,totals,requests,approvedPto,punches};
+   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',enabled:flag?.enabled!==0,isTester:u.is_tester===1,totals,requests,approvedPto,punches};
   });
   return result({week,sunday,today,employees:employeeData});
  }
@@ -54,6 +60,20 @@ export async function adminOps(store,request){
   store.db.exec('INSERT OR REPLACE INTO employee_controls(id,enabled) VALUES (?,?)',employeeId,1);
   store.audit('employee-added',{employeeId,name},'admin');
   return result({ok:true});
+ }
+ if(route==='/api/admin/employee-delete'&&method==='POST'){
+  const data=await request.json(),employeeId=String(data.id??'').trim(),confirmation=String(data.confirmation??'');
+  if(!/^\d{1,12}$/.test(employeeId)||confirmation!=='DELETE')return error('Type DELETE to confirm employee removal');
+  const employee=store.one('SELECT id,name,is_archived FROM users WHERE id=?',employeeId);
+  if(!employee||employee.is_archived===1)return error('Employee not found',404);
+  const punchCount=store.one('SELECT COUNT(*) AS n FROM punches WHERE user_id=?',employeeId).n;
+  const ptoCount=store.one('SELECT COUNT(*) AS n FROM pto WHERE user_id=?',employeeId).n;
+  store.ctx.storage.transactionSync(()=>{
+   store.db.exec('UPDATE users SET is_archived=1 WHERE id=?',employeeId);
+   store.db.exec('DELETE FROM sessions WHERE user_id=?',employeeId);
+   store.audit('employee-archived',{employeeId,name:employee.name,punchCount,ptoCount},'admin');
+  });
+  return result({ok:true,archived:true,punchCount,ptoCount});
  }
  if(route==='/api/admin/preferred-name'&&method==='POST'){
   const data=await request.json();
@@ -169,7 +189,7 @@ export async function adminOps(store,request){
   return result({ok:true});
  }
  if(route==='/api/admin/export'&&method==='GET'){
-  const users=store.all('SELECT id,name FROM users ORDER BY name COLLATE NOCASE');
+  const users=store.all('SELECT id,name,is_tester FROM users WHERE is_archived=0 AND is_tester=0 ORDER BY name COLLATE NOCASE');
   const lines=['Employee ID,Employee,Week Start,Regular Hours,Overtime Hours,Approved PTO,Worked Hours,Needs Review'];
   for(const u of users){
    const t=store.calculate(punchesFor(store,u.id,week),week,today);
