@@ -272,7 +272,7 @@ function welcome(){
  clearKeypadIdle();preserveSessionControls();clearInterval(interval);stopCountdown();state=null;
  const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode');main.classList.add('welcome-mode');
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
- $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><span class="welcome-mark"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span></span><strong>Time Clock</strong><i class="welcome-rule"></i></span><span class="welcome-prompt">Tap to Get Started</span></button>';
+ $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i></span><span class="welcome-prompt">Tap to Get Started</span></button>';
  $('welcomeTouch').onclick=transitionToSignin;
 }
 function transitionToSignin(){
