@@ -183,7 +183,34 @@ main.welcome-mode{position:relative;width:100%;max-width:none;height:100svh;min-
  .login-mode .keypad-display{min-height:52px;margin-bottom:9px}
  .login-mode .keypad-submit{min-height:48px}
 }
-</style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
+
+/* CFI emblem refresh: scalable vector, no raster enlargement/cropping. */
+.emblem-crop{border-radius:50%;overflow:visible}
+.emblem-crop .emblem-vector{display:block;width:100%;height:100%;object-fit:contain}
+.welcome-mark{filter:drop-shadow(0 0 24px #b810253e);animation:mark-breathe 7s ease-in-out infinite}
+.welcome-mark .emblem-crop{width:100%;height:100%}
+@keyframes mark-breathe{0%,100%{filter:drop-shadow(0 0 20px #b8102535)}50%{filter:drop-shadow(0 0 35px #cd173b66)}}
+
+/* More definite separation between the output display and keypad controls. */
+.login-mode .keypad-display{min-height:64px;margin-bottom:14px;border-radius:14px;background:#fff;border:1.5px solid #d6d7df;box-shadow:inset 0 2px 6px #20232a0b;color:#9295a0;font-size:16px;font-weight:550;letter-spacing:0}
+.login-mode .keypad-display.has-value{background:#fff;color:#1e2028;border-color:#b8bbc5;box-shadow:inset 0 2px 6px #20232a09,0 0 0 3px #15182206;font-size:34px;font-weight:800;letter-spacing:.10em}
+.login-mode .keypad-key{background:#e9ebf0;border:1px solid #dfe1e8;color:#353842;font-size:27px;font-weight:530;box-shadow:0 2px 0 #d1d3dc,0 5px 9px #1c24300a;transition:background .12s ease,transform .12s ease,box-shadow .12s ease}
+.login-mode .keypad-key:active{background:#d8dbe5;transform:translateY(2px);box-shadow:0 0 0 #d1d3dc}
+.login-mode .keypad-utility{background:#f5e9ed;border-color:#eedde3;color:#a8233c;font-size:26px;font-weight:700;box-shadow:0 2px 0 #e5cdd5}
+.login-mode .keypad-submit{box-shadow:0 6px 14px #b810251c}
+@media(max-height:710px){.login-mode .keypad-display{min-height:52px;margin-bottom:9px}.login-mode .keypad-key{height:50px}}
+
+/* Stronger but still gentle living background on the idle screen. */
+.welcome-touch{background:radial-gradient(ellipse at 53% 39%,#34202c 0%,#1c1922 51%,#0b0d11 100%)}
+.welcome-touch::before,.welcome-touch::after{content:"";position:absolute;z-index:-1;pointer-events:none;border-radius:50%;will-change:transform}
+.welcome-touch::before{width:95vmax;height:85vmax;left:-33vmax;bottom:-49vmax;background:radial-gradient(ellipse,#e0d9e021 0%,#8c67701a 33%,transparent 70%);filter:blur(24px);animation:welcome-soft-sweep 17s ease-in-out infinite alternate}
+.welcome-touch::after{width:90vmax;height:90vmax;right:-29vmax;top:-42vmax;background:radial-gradient(circle,#ad153d99 0%,#9a1b4d55 30%,#4e21302f 53%,transparent 75%);filter:blur(32px);animation:welcome-red-sweep 13s ease-in-out infinite alternate}
+.welcome-touch .ambient-red{width:83vmax;height:83vmax;top:-25vmax;right:-32vmax;opacity:.68;animation:drift-red 15s ease-in-out infinite alternate}
+.welcome-touch .ambient-white{width:82vmax;height:82vmax;bottom:-36vmax;left:-34vmax;opacity:.64;animation:drift-white 20s ease-in-out infinite alternate}
+@keyframes welcome-red-sweep{0%{transform:translate3d(5%,-4%,0) scale(.91)}50%{transform:translate3d(-20%,20%,0) scale(1.18)}100%{transform:translate3d(-37%,36%,0) scale(1.26)}}
+@keyframes welcome-soft-sweep{0%{transform:translate3d(-8%,6%,0) scale(.9)}50%{transform:translate3d(22%,-12%,0) scale(1.13)}100%{transform:translate3d(36%,-22%,0) scale(1.2)}}
+@media(prefers-reduced-motion:reduce){.welcome-mark,.welcome-touch::before,.welcome-touch::after,.welcome-touch .ambient-red,.welcome-touch .ambient-white{animation:none!important}}
+</style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-tire-logo.svg" alt="CFI Tire Service" class="emblem-vector"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
 function clearKeypadIdle(){clearTimeout(keypadIdle);keypadIdle=null}
@@ -238,7 +265,7 @@ function welcome(){
  clearKeypadIdle();preserveSessionControls();clearInterval(interval);stopCountdown();state=null;
  const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode');main.classList.add('welcome-mode');
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
- $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><span class="welcome-mark"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span></span><strong>Time Clock</strong><i class="welcome-rule"></i></span><span class="welcome-prompt">Tap to Get Started</span></button>';
+ $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><span class="welcome-mark"><span class="emblem-crop"><img src="/cfi-tire-logo.svg" alt="CFI Tire Service" class="emblem-vector"></span></span><strong>Time Clock</strong><i class="welcome-rule"></i></span><span class="welcome-prompt">Tap to Get Started</span></button>';
  $('welcomeTouch').onclick=transitionToSignin;
 }
 function transitionToSignin(){
