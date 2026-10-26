@@ -219,7 +219,8 @@ main.welcome-mode{position:relative;width:100%;max-width:none;height:100svh;min-
 @media(max-height:710px){.login-mode .emblem-crop{width:94px;height:94px}.login-mode .emblem-crop .real-logo{width:259px!important;height:94px!important;left:-29px!important}}
 
 /* Quiet scene-to-scene transitions: no flying panels, oversized scaling, or flashing. */
-.signin-crossfade-veil{position:fixed;inset:0;z-index:25;background:#f7f7f9;pointer-events:none}
+.signin-crossfade-veil{position:fixed;inset:0;z-index:25;background:#f7f7f9;pointer-events:none;overflow:hidden;display:flex;justify-content:center;align-items:center}
+.signin-crossfade-veil>main.login-mode{width:100%;max-width:520px;min-height:100svh;overflow:hidden}
 .welcome-transition-snapshot{background:#101116;z-index:25!important}
 @media(prefers-reduced-motion:reduce){.signin-crossfade-veil{display:none}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
@@ -316,6 +317,11 @@ function showClockAfterSignin(){
   veil=document.createElement('div');
   veil.className='signin-crossfade-veil';
   veil.setAttribute('aria-hidden','true');
+  const oldScreen=document.querySelector('main').cloneNode(true);
+  oldScreen.removeAttribute('id');
+  oldScreen.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+  oldScreen.querySelectorAll('button,input').forEach(node=>{node.disabled=true;node.tabIndex=-1});
+  veil.appendChild(oldScreen);
   document.body.appendChild(veil);
  }
  render();
