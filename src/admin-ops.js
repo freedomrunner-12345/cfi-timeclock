@@ -91,8 +91,8 @@ export async function adminOps(store,request){
   const employeeId=String(data.employeeId??'').trim();
   const date=String(data.date??'');
   const rows=data.punches;
-  if(!/^\\d{1,12}$/.test(employeeId)||!store.one('SELECT id FROM users WHERE id=?',employeeId))return error('Employee not found',404);
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||store.week(date)!==week||date>today)return error('Choose a workday in the selected payroll week');
+  if(!/^\d{1,12}$/.test(employeeId)||!store.one('SELECT id FROM users WHERE id=?',employeeId))return error('Employee not found',404);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||store.week(date)!==week||date>today)return error('Choose a workday in the selected payroll week');
   if(!Array.isArray(rows)||rows.length<2||rows.length>40||rows.length%2!==0)return error('Enter complete Clock In / Clock Out pairs (2–40 punches)');
   const normalized=[];
   const existing=store.all('SELECT at FROM punches WHERE user_id=?',employeeId);
