@@ -92,6 +92,35 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .employee-pay-select{border:1px solid #dcdde5;border-radius:9px;min-height:32px;padding:4px 7px;background:white;font-size:13px;color:#30313a;font-weight:650;cursor:pointer}
 .employee-pay-select:disabled{opacity:.5}
 .hourly-hours-note{font-size:12px;color:#777a84;line-height:1.25;margin-top:3px}
+
+/* Manual Paychex-entry worksheet */
+.paychex-card{padding:20px}
+.paychex-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
+.paychex-intro p{margin:0;font-size:14px}
+.paychex-count{white-space:nowrap;border-radius:99px;background:#e8f3ed;color:#246c4d;font-weight:750;padding:6px 11px;font-size:12px}
+.paychex-table-wrap{width:100%;overflow-x:auto;border:1px solid #e4e5eb;border-radius:12px}
+.paychex-table{width:100%;min-width:680px;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.paychex-table th{position:sticky;top:0;background:#f2f2f6;color:#505460;text-align:right;white-space:nowrap;padding:11px 12px;border-bottom:2px solid #dfe0e7;font-size:12px;line-height:1.3}
+.paychex-table th:first-child{text-align:left}
+.paychex-table td{padding:10px 12px;border-top:1px solid #ececf0;vertical-align:middle}
+.paychex-table tbody tr:hover:not(.paychex-totals){background:#f7f9fd}
+.paychex-employee{min-width:172px}
+.paychex-employee strong{display:block;font-size:14px;line-height:1.35}
+.paychex-employee span{display:block;font-size:12px;color:#8b8d98}
+.paychex-number{text-align:right;font-weight:740;white-space:nowrap}
+.paychex-total-cell{background:#f7f7fa}
+.paychex-status{white-space:nowrap;font-weight:750;font-size:11px;border-radius:7px;padding:5px 8px;display:inline-block}
+.paychex-warning{background:#fff0d4;color:#925c15}
+.paychex-ready{background:#e6f4ed;color:#22754f}
+.paychex-muted{background:#ececf0;color:#747783}
+.paychex-issue{background:#fffcf5}
+.paychex-issue td:first-child{border-left:3px solid #d9962b}
+.paychex-zero{color:#7b7e88}
+.paychex-view{min-height:32px;font-size:12px;padding:5px 10px}
+.paychex-totals{background:#282b34;color:#fff;font-weight:850}
+.paychex-totals td{border-top:2px solid #282b34;padding-top:14px;padding-bottom:14px}
+.paychex-note{font-size:12px;color:#747780;line-height:1.5;margin:11px 1px 0!important}
+@media(max-width:650px){.paychex-card{padding:14px}.paychex-intro{flex-direction:column;gap:6px}.paychex-table td{padding:9px 10px}}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -136,9 +165,35 @@ async function start(){try{const config=await api('config');try{await api('sessi
 async function refresh(){state=await api('state'+(week?'?week='+week:''));week=state.week;render()}
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
 function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.payType==='SALARY'?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
-$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div><nav class="tabs">'+['overview','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
+$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div><nav class="tabs">'+['overview','paychex','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
 $('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
-function drawContent(){const c=$('content');if(tab==='employees'){
+function drawPaychexEntry(c){
+ const hourly=state.employees.filter(e=>e.payType!=='SALARY').sort((a,b)=>a.name.localeCompare(b.name));
+ const salaried=state.employees.filter(e=>e.payType==='SALARY');
+ const issueCount=hourly.filter(e=>e.totals.warnings.length).length;
+ const total=(fn)=>fix(hourly.reduce((sum,e)=>sum+fn(e),0));
+ const row=e=>{
+  const issue=e.totals.warnings.length>0;
+  const empty=e.totals.workedHours===0&&e.approvedPto===0&&e.punches.length===0;
+  const status=issue?'Review punches':empty?'No hours':e.totals.workedHours===0?'PTO only':'Ready';
+  return '<tr class="'+(issue?'paychex-issue':empty?'paychex-zero':'')+'">'
+   +'<td class="paychex-employee"><strong>'+safe(e.name)+'</strong><span>ID '+safe(e.id)+'</span></td>'
+   +'<td class="paychex-number">'+fix(e.totals.regularHours)+'</td>'
+   +'<td class="paychex-number">'+fix(e.totals.overtimeHours)+'</td>'
+   +'<td class="paychex-number">'+fix(e.approvedPto)+'</td>'
+   +'<td class="paychex-number paychex-total-cell">'+fix(e.totals.workedHours+e.approvedPto)+'</td>'
+   +'<td><span class="paychex-status '+(issue?'paychex-warning':empty?'paychex-muted':'paychex-ready')+'">'+status+'</span></td>'
+   +'<td><button class="btn outline paychex-view" data-paychex-view="'+safe(e.id)+'">View</button></td></tr>';
+ };
+ const totals='<tr class="paychex-totals"><td>HOURLY TOTAL</td><td class="paychex-number">'+total(e=>e.totals.regularHours)+'</td><td class="paychex-number">'+total(e=>e.totals.overtimeHours)+'</td><td class="paychex-number">'+total(e=>e.approvedPto)+'</td><td class="paychex-number">'+total(e=>e.totals.workedHours+e.approvedPto)+'</td><td colspan="2"></td></tr>';
+ c.innerHTML='<section class="card paychex-card"><div class="paychex-intro"><div><h2>Paychex Entry</h2><p class="muted">Week of '+displayDay(week)+' – '+displayDay(state.sunday)+' · Read across each row when entering hours into Paychex.</p></div><span class="paychex-count">'+hourly.length+' hourly employees</span></div>'
+  +(issueCount?'<div class="warn"><b>'+issueCount+' timecard'+(issueCount===1?' needs':'s need')+' review.</b> Check flagged punches before submitting payroll. Displayed hours may be incomplete.</div>':'')
+  +'<div class="paychex-table-wrap"><table class="paychex-table"><thead><tr><th scope="col">Employee</th><th scope="col">Hourly<br>Hours</th><th scope="col">Overtime<br>Hours</th><th scope="col">PTO<br>Hours</th><th scope="col">Total<br>Hours</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>'
+  +(hourly.length?hourly.map(row).join(''):'<tr><td colspan="7">No hourly employees found.</td></tr>')+totals+'</tbody></table></div>'
+  +'<p class="paychex-note">Regular and overtime hours use the time clock’s weekly rounding. PTO shows approved hours only. Salaried employees ('+salaried.length+') are excluded from this entry table and its totals. This is a reference for manual Paychex entry—not an automatic payroll submission.</p></section>';
+ c.querySelectorAll('[data-paychex-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.paychexView)));
+}
+function drawContent(){const c=$('content');if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
  const people=state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name));
  c.innerHTML='<details class="card employee-form-details"><summary>Import employee roster</summary><p class="muted">Import a roster file (.tsv).</p><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></details>'
  +'<details class="card employee-form-details"><summary>Add employee</summary><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></details>'
