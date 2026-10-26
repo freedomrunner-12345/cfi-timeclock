@@ -260,6 +260,41 @@ main.signed-in-mode{justify-content:flex-start;padding-top:max(45px,env(safe-are
 .questions-number{font-size:16px;color:#777985;margin:14px 0 0}
 @media(max-height:740px){main.signed-in-mode{padding-top:25px}.employee-greeting{margin-bottom:25px}.primary-zone{padding:25px 20px}.daily-section{margin-top:32px}.clock-home .option-actions{margin-top:33px}#app .session-controls{margin-top:24px}}
 @media(max-width:360px){.employee-greeting .hello{font-size:31px}.status-line{font-size:18px}.compact-punches .punch-time{font-size:21px}}
+
+/* Tablet layout pass: center the entire employee experience, not individual fragments. */
+main.signed-in-mode{min-height:100svh;justify-content:center;padding:32px 18px max(32px,env(safe-area-inset-bottom))}
+.signed-in-mode #app{width:100%}
+.employee-greeting{margin-bottom:29px}
+.primary-zone{padding:28px 23px 25px}
+.status-line{margin-bottom:22px}
+.main-clock-button{min-height:96px}
+.last-punch{margin-top:19px}
+.daily-section{margin-top:31px}
+.quiet-heading{margin-bottom:13px}
+.compact-punches .punch-entry{padding:8px 0}
+.clock-home .option-actions{margin-top:31px}
+.clock-home .option-button{min-height:88px}
+.clock-home .questions-clock{display:flex;width:100%;justify-content:center;align-items:center;margin:18px 0 0;text-align:center}
+.clock-home .questions-link{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:48px;min-width:145px;text-align:center}
+#app .session-controls{display:flex;align-items:center;justify-content:center;gap:9px;margin:18px 0 0;padding:0}
+#app .session-controls #signout{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:190px!important;min-height:52px!important;padding:10px 24px!important;border:2px solid #b81025!important;border-radius:999px!important;background:#fff!important;color:#b81025!important;box-shadow:0 3px 12px #b8102510!important;font-size:19px!important;font-weight:800!important}
+#app .session-controls #signout:active{background:#fcecef!important;transform:scale(.98)}
+#app .session-controls #signout:focus-visible{outline:3px solid #b81025;outline-offset:3px}
+#app .session-controls #inactivity{font-size:15px;color:#9698a2}
+@media(max-height:790px){
+ main.signed-in-mode{justify-content:flex-start;padding-top:22px;padding-bottom:22px}
+ .employee-greeting{margin-bottom:19px}
+ .primary-zone{padding:20px 19px}
+ .status-line{margin-bottom:15px}
+ .main-clock-button{min-height:80px}
+ .last-punch{margin-top:13px}
+ .daily-section{margin-top:20px}
+ .quiet-heading{margin-bottom:7px}
+ .clock-home .option-actions{margin-top:21px}
+ .clock-home .option-button{min-height:78px}
+ .clock-home .questions-clock{margin-top:8px}
+ #app .session-controls{margin-top:8px}
+}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -490,7 +525,7 @@ function render(){
   +'<div class="option-actions" aria-label="More Actions">'
   +'<button class="option-button" id="pto" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg><span>Request Time Off</span></button>'
   +'<button class="option-button" id="history" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>My Timecard</span></button>'
-  +'<div class="questions-clock">'+questionsLink()+'</div></div>';
+  +'</div><div class="questions-clock">'+questionsLink()+'</div></div>';
  $('app').appendChild($('sessionControls'));
  $('punch').onclick=()=>punch(on?'OUT':'IN');
  $('pto').onclick=pto;
