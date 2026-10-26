@@ -10,21 +10,21 @@ export async function adminOps(store,request){
  const asked=url.searchParams.get('week');
  const week=asked&&/^\d{4}-\d{2}-\d{2}$/.test(asked)&&store.week(asked)===asked?asked:store.week(today);
  const sunday=store.endWeek(week);
- // Initialize the specifically designated tester account once, without altering punch history.
  store.db.exec('CREATE TABLE IF NOT EXISTS app_migrations (key TEXT PRIMARY KEY)');
- if(!store.one('SELECT key FROM app_migrations WHERE key=?','tester-initial-v1')){
-  store.db.exec('UPDATE users SET is_tester=1 WHERE id=? AND name=?','194','Nunn, Travis L');
-  store.db.exec('INSERT INTO app_migrations(key) VALUES (?)','tester-initial-v1');
+ if(!store.one('SELECT key FROM app_migrations WHERE key=?','salary-initial-v1')){
+  for(const name of ['Glenn, Joel','Glenn, Daniel','Nunn, Travis L'])
+   store.db.exec('UPDATE users SET pay_type=? WHERE name=?','SALARY',name);
+  store.db.exec('INSERT INTO app_migrations(key) VALUES (?)','salary-initial-v1');
  }
  if(route==='/api/admin/state'&&method==='GET'){
-  const users=store.all('SELECT id,name,preferred_name,is_tester FROM users WHERE is_archived=0 ORDER BY name COLLATE NOCASE');
+  const users=store.all('SELECT id,name,preferred_name,pay_type FROM users WHERE is_archived=0 ORDER BY name COLLATE NOCASE');
   const employeeData=users.map(u=>{
    const flag=store.one('SELECT enabled FROM employee_controls WHERE id=?',u.id);
    const punches=punchesFor(store,u.id,week);
    const totals=store.calculate(punches,week,today);
    const requests=store.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date',u.id,week,sunday);
    const approvedPto=requests.filter(p=>p.status==='APPROVED').reduce((sum,p)=>sum+p.hours,0);
-   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',enabled:flag?.enabled!==0,isTester:u.is_tester===1,totals,requests,approvedPto,punches};
+   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',enabled:flag?.enabled!==0,payType:u.pay_type==='SALARY'?'SALARY':'HOURLY',totals,requests,approvedPto,punches};
   });
   return result({week,sunday,today,employees:employeeData});
  }
@@ -60,6 +60,15 @@ export async function adminOps(store,request){
   store.db.exec('INSERT OR REPLACE INTO employee_controls(id,enabled) VALUES (?,?)',employeeId,1);
   store.audit('employee-added',{employeeId,name},'admin');
   return result({ok:true});
+ }
+ if(route==='/api/admin/employee-pay-type'&&method==='POST'){
+  const data=await request.json(),employeeId=String(data.id??'').trim(),payType=String(data.payType??'');
+  if(!/^\d{1,12}$/.test(employeeId)||!['HOURLY','SALARY'].includes(payType))return error('Select Hourly or Salary');
+  const employee=store.one('SELECT id,pay_type FROM users WHERE id=? AND is_archived=0',employeeId);
+  if(!employee)return error('Employee not found',404);
+  store.db.exec('UPDATE users SET pay_type=? WHERE id=?',payType,employeeId);
+  store.audit('employee-pay-type',{employeeId,previous:employee.pay_type,updated:payType},'admin');
+  return result({ok:true,payType});
  }
  if(route==='/api/admin/employee-delete'&&method==='POST'){
   const data=await request.json(),employeeId=String(data.id??'').trim(),confirmation=String(data.confirmation??'');
@@ -190,7 +199,7 @@ export async function adminOps(store,request){
   return result({ok:true});
  }
  if(route==='/api/admin/export'&&method==='GET'){
-  const users=store.all('SELECT id,name,is_tester FROM users WHERE is_archived=0 AND is_tester=0 ORDER BY name COLLATE NOCASE');
+  const users=store.all('SELECT id,name FROM users WHERE is_archived=0 AND pay_type=? ORDER BY name COLLATE NOCASE','HOURLY');
   const lines=['Employee ID,Employee,Week Start,Regular Hours,Overtime Hours,Approved PTO,Worked Hours,Needs Review'];
   for(const u of users){
    const t=store.calculate(punchesFor(store,u.id,week),week,today);
