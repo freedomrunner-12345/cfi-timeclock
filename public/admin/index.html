@@ -110,7 +110,7 @@ function showCard(e){
 function quickPunchEntry(employee){
  const eligible=employee.totals.days.map(d=>d.date).filter(d=>d<=state.today);
  pop('<h2>Quick Punch Entry</h2><p class="muted">'+safe(employee.name)+' · Week of '+displayDay(week)+'</p>'
-  +'<p class="muted quick-help">Enter IN, then Tab for OUT or the next IN. Add other days below. Times: 7:30 AM or 15:30.</p>'
+  +'<p class="muted quick-help">Enter for next punch · Backspace on empty row to undo · Shift+Enter for next day. Times: 7:30 AM or 15:30.</p>'
   +'<form id="quickForm"><div id="quickDays"></div><button type="button" class="btn outline quick-add-day" id="quickAddDay">+ Add Another Day</button>'
   +'<p id="quickError" class="quick-error hidden" role="alert"></p><button class="btn red" id="quickSave" style="width:100%;margin-top:12px" type="submit">Save All Punches</button></form>');
  const container=$('quickDays'),chosen=state.today>=week&&state.today<=state.sunday?state.today:week;
@@ -138,8 +138,32 @@ function quickPunchEntry(employee){
    rows.appendChild(line);
    const input=line.querySelector('input');
    input.addEventListener('keydown',event=>{
-    if(event.key==='Tab'&&!event.shiftKey&&line===rows.lastElementChild&&input.value.trim()){event.preventDefault();addLine()}
-    if(event.key==='Enter'&&input.value.trim()){event.preventDefault();if(line===rows.lastElementChild)addLine();else line.nextElementSibling?.querySelector('input')?.focus()}
+    if(event.key==='Backspace'&&!input.value&&line===rows.lastElementChild&&rows.children.length>1){
+     event.preventDefault();line.remove();rows.lastElementChild.querySelector('input').focus();return;
+    }
+    if(event.key==='Enter'&&event.shiftKey){
+     event.preventDefault();
+     // Entering a new day after an empty trailing IN should not leave an incomplete pair.
+     const trailing=rows.lastElementChild?.querySelector('input');
+     if(trailing&&!trailing.value.trim()&&rows.children.length>1&&rows.children.length%2===1)rows.lastElementChild.remove();
+     const all=[...rows.querySelectorAll('input')];
+     if(all.length%2||all.some(x=>!x.value.trim())){
+      alertUser('Complete the current IN / OUT pair first');return;
+     }
+     const used=new Set([...container.querySelectorAll('.quick-day-select')].map(x=>x.value));
+     const following=eligible.find(d=>d>select.value&&!used.has(d));
+     if(!following){alertUser('No later day available in this payroll week');return}
+     addDay(following);
+     container.lastElementChild.querySelector('.quick-time')?.focus();
+     return;
+    }
+    if(event.key==='Tab'&&!event.shiftKey&&line===rows.lastElementChild&&input.value.trim()){event.preventDefault();addLine();return}
+    if(event.key==='Enter'){
+     event.preventDefault();
+     if(!input.value.trim())return;
+     if(line===rows.lastElementChild)addLine();
+     else line.nextElementSibling?.querySelector('input')?.focus();
+    }
    });
    if(focus)input.focus();
   }
