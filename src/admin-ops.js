@@ -70,6 +70,7 @@ export async function adminOps(store,request){
   const ptoCount=store.one('SELECT COUNT(*) AS n FROM pto WHERE user_id=?',employeeId).n;
   store.ctx.storage.transactionSync(()=>{
    store.db.exec('UPDATE users SET is_archived=1 WHERE id=?',employeeId);
+   store.db.exec('INSERT OR REPLACE INTO employee_controls(id,enabled) VALUES (?,0)',employeeId);
    store.db.exec('DELETE FROM sessions WHERE user_id=?',employeeId);
    store.audit('employee-archived',{employeeId,name:employee.name,punchCount,ptoCount},'admin');
   });
