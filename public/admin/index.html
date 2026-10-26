@@ -37,13 +37,44 @@
 .timecard-total-row strong{font-size:15px;color:#252832;font-variant-numeric:tabular-nums}
 .timecard-grand-total{border-top:1px solid #c8c9d0;margin-top:8px;padding-top:11px;font-weight:800;color:#23252f}
 .timecard-grand-total strong{font-size:21px;color:#23252f}
+.quick-minimize{width:100%;min-height:37px;font-size:14px;margin:0 0 10px;padding:6px 12px;background:#f3f3f6}
+.quick-draft-dock{position:fixed;right:16px;bottom:16px;z-index:6;border:0;border-radius:13px;background:#b81025;color:#fff;padding:12px 17px;box-shadow:0 5px 22px #15151c44;font:750 14px/1.3 system-ui,sans-serif;cursor:pointer;max-width:min(410px,calc(100vw - 32px));text-align:left}
+.quick-draft-dock:focus-visible{outline:3px solid #ffb5c3;outline-offset:3px}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
-let state=null,week=null,tab='overview';
+let state=null,week=null,tab='overview',quickDraft=null;
 async function api(path,body){const r=await fetch('/api/admin/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json().catch(()=>({error:'Connection unavailable'}));if(!r.ok)throw Error(data.error||'Request failed');return data}
 function alertUser(m){$('toast').textContent=m;$('toast').classList.remove('hidden');clearTimeout(alertUser.t);alertUser.t=setTimeout(()=>$('toast').classList.add('hidden'),3800)}
 function pop(html){$('overlay').innerHTML='<div class="modal">'+html+'<div class="sep"></div><button id="cancel" class="btn outline">Close</button></div>';$('overlay').classList.remove('hidden');$('overlay').onclick=e=>{if(e.target===$('overlay'))hide()};$('cancel').onclick=hide}
-function hide(){$('overlay').classList.add('hidden');$('overlay').innerHTML=''}
+function updateQuickDock(){
+ let dock=$('quickDraftDock');
+ if(!quickDraft){if(dock)dock.remove();return}
+ if(!dock){dock=document.createElement('button');dock.id='quickDraftDock';dock.type='button';dock.className='quick-draft-dock';document.body.appendChild(dock)}
+ dock.textContent='Resume Quick Entry · '+quickDraft.employeeName+' · '+displayDay(quickDraft.week);
+ dock.onclick=restoreQuickDraft;
+}
+function minimizeQuickDraft(){
+ const overlay=$('overlay'),modal=overlay.firstElementChild;
+ if(!modal||!quickDraft||modal!==quickDraft.node)return;
+ overlay.removeChild(modal);
+ overlay.classList.add('hidden');
+ updateQuickDock();
+}
+function restoreQuickDraft(){
+ if(!quickDraft)return;
+ const overlay=$('overlay');
+ overlay.replaceChildren(quickDraft.node);
+ overlay.classList.remove('hidden');
+ overlay.onclick=e=>{if(e.target===overlay)hide()};
+ const dock=$('quickDraftDock');if(dock)dock.remove();
+}
+function hide(){
+ if(quickDraft&&$('overlay').contains(quickDraft.node)){
+  quickDraft=null;
+  updateQuickDock();
+ }
+ $('overlay').classList.add('hidden');$('overlay').innerHTML='';
+}
 const displayDay=d=>new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00Z'));
 const time=iso=>new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}).format(new Date(iso));
 const central=iso=>new Intl.DateTimeFormat('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'America/Chicago'}).format(new Date(iso)).replace(' ','T');
@@ -54,7 +85,7 @@ async function refresh(){state=await api('state'+(week?'?week='+week:''));week=s
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
 function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((s,e)=>s+e.totals.workedHours,0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
 $('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Worked hours</div><div class="metric">'+fix(worked)+'</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div><nav class="tabs">'+['overview','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
-$('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;login(true)};drawContent()}
+$('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
 function drawContent(){const c=$('content');if(tab==='employees'){c.innerHTML='<div class="card"><h2>Import employee roster</h2><p class="muted">Load all employees at once from the roster file. The other employees will stay disabled until you enable them.</p><label class="label" for="rosterfile">Employee roster file (.tsv)</label><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></div><div class="card"><h2>Add employee</h2><p class="muted">Employees sign in with their ID only. No employee directory appears on their devices.</p><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></div><div class="card"><h2>Employee access</h2>'+state.employees.map(e=>'<div class="employee"><div><div class="name">'+safe(e.name)+'</div><div class="sub">ID '+safe(e.id)+'</div><div class="sub">Display: '+safe(e.preferredName||(e.name.includes(',')?e.name.split(',')[1].trim().split(/\s+/)[0]:e.name.split(/\s+/)[0]))+'</div></div><div class="row"><span class="tag '+(e.enabled?'':'off')+'">'+(e.enabled?'Active':'Disabled')+'</span><button class="btn outline" data-preferred="'+safe(e.id)+'">Preferred Name</button><button class="btn outline" data-toggle="'+safe(e.id)+'">'+(e.enabled?'Disable':'Enable')+'</button></div></div>').join('')+'</div>';c.querySelector('#importroster').onclick=async()=>{
  const file=c.querySelector('#rosterfile').files?.[0];
  if(!file){alertUser('Select the employee roster file first');return}
@@ -114,11 +145,18 @@ function showCard(e){
 }
 
 function quickPunchEntry(employee){
+ if(quickDraft){
+  if(quickDraft.employeeId===employee.id&&quickDraft.week===week){restoreQuickDraft();return}
+  alertUser('A draft for '+quickDraft.employeeName+' is saved. Resume or finish it first.');return;
+ }
  const eligible=employee.totals.days.map(d=>d.date).filter(d=>d<=state.today);
  pop('<h2>Quick Punch Entry</h2><p class="muted">'+safe(employee.name)+' · Week of '+displayDay(week)+'</p>'
   +'<p class="muted quick-help">Enter for next punch · Backspace on empty row to undo · Shift+Enter for next day. Times: 7:30 AM or 15:30.</p>'
+  +'<button type="button" id="quickMinimize" class="btn outline quick-minimize"><span aria-hidden="true">—</span> Minimize & Keep Draft</button>'
   +'<form id="quickForm"><div id="quickDays"></div><button type="button" class="btn outline quick-add-day" id="quickAddDay">+ Add Another Day</button>'
   +'<p id="quickError" class="quick-error hidden" role="alert"></p><button class="btn red" id="quickSave" style="width:100%;margin-top:12px" type="submit">Save All Punches</button></form>');
+ quickDraft={node:$('overlay').firstElementChild,employeeId:employee.id,employeeName:employee.name,week};
+ $('quickMinimize').onclick=minimizeQuickDraft;
  const container=$('quickDays'),chosen=state.today>=week&&state.today<=state.sunday?state.today:week;
  function addDay(date){
   if(container.children.length>=eligible.length){alertUser('All available days have been added');return}
