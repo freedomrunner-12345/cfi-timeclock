@@ -84,11 +84,13 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .compact-employee .employee-actions .btn{font-size:13px;min-height:32px;padding:5px 10px;border-radius:9px}
 .compact-employee .tag{font-size:11px;padding:4px 7px}
 .employee-delete{color:#b81025!important}
-.tester-label{display:inline-block;background:#ede8ff;color:#6945ae;border-radius:6px;font-size:10px;padding:3px 6px;vertical-align:middle;font-weight:850;letter-spacing:.04em}
-.compact-employee.is-tester{background:#faf8ff}
+.salary-label{display:inline-block;background:#ede8ff;color:#6945ae;border-radius:6px;font-size:10px;padding:3px 6px;vertical-align:middle;font-weight:850;letter-spacing:.04em}
+.compact-employee.is-salary{background:#faf8ff}
 @media(max-width:650px){.compact-employee{align-items:flex-start}.compact-employee .employee-actions{flex-wrap:wrap;justify-content:flex-end}.compact-employee .employee-actions .btn{min-height:31px}}
-.timecard-list-row.status-test{border-left-color:#8b75c4;background:#faf8ff}
-.timecard-list-status.status-test{background:#eee9fb;color:#684f9c}
+.timecard-list-row.status-salary{border-left-color:#8b75c4;background:#faf8ff}
+.timecard-list-status.status-salary{background:#eee9fb;color:#684f9c}
+.employee-pay-select{border:1px solid #dcdde5;border-radius:9px;min-height:32px;padding:4px 7px;background:white;font-size:13px;color:#30313a;font-weight:650;cursor:pointer}
+.employee-pay-select:disabled{opacity:.5}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -132,15 +134,15 @@ function login(configured){$('logout').classList.add('hidden');if(!configured){$
 async function start(){try{const config=await api('config');try{await api('session');await refresh()}catch(e){login(config.configured)}}catch(e){$('app').innerHTML='<div class="card"><h2>Unable to connect</h2><p>'+safe(e.message)+'</p><button class="btn red" onclick="location.reload()">Try again</button></div>'}}
 async function refresh(){state=await api('state'+(week?'?week='+week:''));week=state.week;render()}
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
-function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.isTester?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
+function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.payType==='SALARY'?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
 $('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Worked hours</div><div class="metric">'+fix(worked)+'</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div><nav class="tabs">'+['overview','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
 $('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
 function drawContent(){const c=$('content');if(tab==='employees'){
- const people=state.employees.slice().sort((a,b)=>Number(a.isTester)-Number(b.isTester)||a.name.localeCompare(b.name));
+ const people=state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name));
  c.innerHTML='<details class="card employee-form-details"><summary>Import employee roster</summary><p class="muted">Import a roster file (.tsv).</p><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></details>'
  +'<details class="card employee-form-details"><summary>Add employee</summary><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></details>'
  +'<div class="card employee-directory"><h2>Employees <span class="employee-count">'+people.length+'</span></h2><p class="muted">Remove hides employees from the active roster but preserves historical payroll records.</p>'
- +people.map(e=>'<div class="employee compact-employee'+(e.isTester?' is-tester':'')+'"><div class="employee-info"><div class="name">'+safe(e.name)+(e.isTester?' <span class="tester-label">TESTER</span>':'')+'</div><div class="sub">ID '+safe(e.id)+' · Display: '+safe(e.preferredName||(e.name.includes(',')?e.name.split(',')[1].trim().split(/\s+/)[0]:e.name.split(/\s+/)[0]))+'</div></div><div class="row employee-actions"><span class="tag '+(e.enabled?'':'off')+'">'+(e.enabled?'Active':'Disabled')+'</span><button class="btn outline" data-preferred="'+safe(e.id)+'">Name</button><button class="btn outline" data-toggle="'+safe(e.id)+'">'+(e.enabled?'Disable':'Enable')+'</button><button class="btn outline employee-delete" data-delete-employee="'+safe(e.id)+'">Delete</button></div></div>').join('')+'</div>';
+ +people.map(e=>'<div class="employee compact-employee'+(e.payType==='SALARY'?' is-salary':'')+'"><div class="employee-info"><div class="name">'+safe(e.name)+(e.payType==='SALARY'?' <span class="salary-label">SALARY</span>':'')+'</div><div class="sub">ID '+safe(e.id)+' · Display: '+safe(e.preferredName||(e.name.includes(',')?e.name.split(',')[1].trim().split(/\s+/)[0]:e.name.split(/\s+/)[0]))+'</div></div><div class="row employee-actions"><select class="employee-pay-select" data-pay-type="'+safe(e.id)+'" aria-label="Pay type for '+safe(e.name)+'"><option value="HOURLY" '+(e.payType==='SALARY'?'':'selected')+'>Hourly</option><option value="SALARY" '+(e.payType==='SALARY'?'selected':'')+'>Salary</option></select><span class="tag '+(e.enabled?'':'off')+'">'+(e.enabled?'Active':'Disabled')+'</span><button class="btn outline" data-preferred="'+safe(e.id)+'">Name</button><button class="btn outline" data-toggle="'+safe(e.id)+'">'+(e.enabled?'Disable':'Enable')+'</button><button class="btn outline employee-delete" data-delete-employee="'+safe(e.id)+'">Delete</button></div></div>').join('')+'</div>';
 c.querySelector('#importroster').onclick=async()=>{
  const file=c.querySelector('#rosterfile').files?.[0];
  if(!file){alertUser('Select the employee roster file first');return}
@@ -160,7 +162,16 @@ c.querySelector('#importroster').onclick=async()=>{
 };c.querySelector('#add').onsubmit=async ev=>{ev.preventDefault();const d=Object.fromEntries(new FormData(ev.target).entries());try{await api('employee',d);await refresh();alertUser('Employee added')}catch(e){alertUser(e.message)}};c.querySelectorAll('[data-preferred]').forEach(b=>b.onclick=()=>{
  const employee=state.employees.find(e=>e.id===b.dataset.preferred);
  if(employee)editPreferredName(employee);
-});c.querySelectorAll('[data-delete-employee]').forEach(b=>b.onclick=()=>{
+});c.querySelectorAll('[data-pay-type]').forEach(select=>select.onchange=async()=>{
+ const employee=state.employees.find(e=>e.id===select.dataset.payType);
+ if(!employee)return;
+ const old=employee.payType||'HOURLY',next=select.value;
+ if(!confirm('Set '+employee.name+' to '+(next==='SALARY'?'Salary':'Hourly')+'? This changes whether their hours count in hourly payroll totals and CSV export.')){select.value=old;return}
+ select.disabled=true;
+ try{await api('employee-pay-type',{id:employee.id,payType:next});await refresh();alertUser('Employee set to '+(next==='SALARY'?'Salary':'Hourly'))}
+ catch(error){select.value=old;select.disabled=false;alertUser(error.message)}
+});
+c.querySelectorAll('[data-delete-employee]').forEach(b=>b.onclick=()=>{
  const employee=state.employees.find(e=>e.id===b.dataset.deleteEmployee);
  if(!employee)return;
  pop('<h2>Remove Employee</h2><p class="muted">'+safe(employee.name)+'</p><div class="warn">This employee will disappear from active timecards and will no longer be able to sign in. Existing punches, PTO, and audit records are kept for payroll history.</div><form id="removeEmployeeForm"><label class="label" for="removeEmployeeConfirmation">Type DELETE to confirm</label><input id="removeEmployeeConfirmation" class="input" autocomplete="off" spellcheck="false" placeholder="DELETE" required><button type="submit" id="confirmEmployeeRemoval" class="btn red" disabled>Remove Employee</button></form>');
@@ -174,17 +185,17 @@ c.querySelector('#importroster').onclick=async()=>{
 });
 c.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const emp=state.employees.find(e=>e.id===b.dataset.toggle);if(!confirm((emp.enabled?'Disable ':'Enable ')+emp.name+'?'))return;try{await api('employee-status',{id:emp.id,enabled:!emp.enabled});await refresh()}catch(e){alertUser(e.message)}});return}
 if(tab==='pto'){const requests=state.employees.flatMap(e=>e.requests.map(r=>({...r,employee:e.name})));c.innerHTML='<div class="card"><h2>PTO requests</h2>'+(requests.length?requests.map(r=>'<div class="employee"><div><div class="name">'+safe(r.employee)+'</div><div class="sub">'+displayDay(r.date)+' · '+fix(r.hours)+' hours</div></div><div class="row"><span class="tag '+(r.status==='PENDING'?'pending':r.status==='DENIED'?'off':'')+'">'+safe(r.status)+'</span>'+(r.status==='PENDING'?'<button class="btn red" data-decision="APPROVED" data-id="'+safe(r.id)+'">Approve</button><button class="btn outline" data-decision="DENIED" data-id="'+safe(r.id)+'">Deny</button>':'')+'</div></div>').join(''):'<p class="muted">No PTO requests for this week.</p>')+'</div>';c.querySelectorAll('[data-decision]').forEach(b=>b.onclick=async()=>{try{await api('pto-review',{id:b.dataset.id,status:b.dataset.decision});await refresh();alertUser('PTO updated')}catch(e){alertUser(e.message)}});return}
-const grouped={review:[],entered:[],pto:[],empty:[],test:[]};
+const grouped={review:[],entered:[],pto:[],empty:[],salary:[]};
 for(const e of state.employees){
  const hasPunches=e.punches.length>0;
- if(e.isTester)grouped.test.push(e);
+ if(e.payType==='SALARY')grouped.salary.push(e);
  else if(e.totals.warnings.length)grouped.review.push(e);
  else if(hasPunches||e.totals.workedHours>0)grouped.entered.push(e);
  else if(e.approvedPto>0)grouped.pto.push(e);
  else grouped.empty.push(e);
 }
 const entryRow=(e,status)=>'<div class="timecard-list-row status-'+status+'"><div class="timecard-list-detail"><div class="name">'+safe(e.name)+'</div><div class="sub">Regular '+fix(e.totals.regularHours)+' · OT '+fix(e.totals.overtimeHours)+' · PTO '+fix(e.approvedPto)+'</div></div>'
- +'<div class="timecard-list-actions"><span class="timecard-list-status status-'+status+'">'+(status==='review'?'Needs review · '+e.totals.warnings.length+' day'+(e.totals.warnings.length===1?'':'s'):status==='entered'?fix(e.totals.workedHours)+' hrs':status==='pto'?fix(e.approvedPto)+' PTO hrs':status==='test'?'Tester · '+fix(e.totals.workedHours)+' hrs':'No hours')+'</span><button class="btn outline" data-view="'+safe(e.id)+'">View</button></div></div>';
+ +'<div class="timecard-list-actions"><span class="timecard-list-status status-'+status+'">'+(status==='review'?'Needs review · '+e.totals.warnings.length+' day'+(e.totals.warnings.length===1?'':'s'):status==='entered'?fix(e.totals.workedHours)+' hrs':status==='pto'?fix(e.approvedPto)+' PTO hrs':status==='salary'?'Salary · '+fix(e.totals.workedHours)+' hrs':'No hours')+'</span><button class="btn outline" data-view="'+safe(e.id)+'">View</button></div></div>';
 const section=(label,status,people,collapse=false)=>{
  if(!people.length)return '';
  const content=people.map(e=>entryRow(e,status)).join('');
@@ -194,7 +205,7 @@ const section=(label,status,people,collapse=false)=>{
 };
 c.innerHTML='<div class="card"><div class="hrow"><div><h2>Weekly timecards</h2><p class="muted">Employees grouped by payroll status. Review incomplete punches first.</p></div><button id="export" class="btn red">Export CSV</button></div>'
  +(state.employees.length?
- section('Needs Attention','review',grouped.review)+section('Hours Entered','entered',grouped.entered)+section('PTO Only','pto',grouped.pto)+section('No Hours','empty',grouped.empty,true)+section('Test Accounts (excluded from totals)','test',grouped.test,true)
+ section('Needs Attention','review',grouped.review)+section('Hours Entered','entered',grouped.entered)+section('PTO Only','pto',grouped.pto)+section('No Hours','empty',grouped.empty,true)+section('Salaried Employees (excluded from hourly totals)','salary',grouped.salary,true)
  :'<p class="muted">No employees yet. Open Employees to add your first account.</p>')+'</div>';
 c.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.view)));
 $('export').onclick=async()=>{try{const r=await fetch('/api/admin/export?week='+week,{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Export unavailable');const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='cfi-payroll-'+week+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(e){alertUser(e.message)}}
