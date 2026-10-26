@@ -40,6 +40,35 @@
 .quick-minimize{width:100%;min-height:37px;font-size:14px;margin:0 0 10px;padding:6px 12px;background:#f3f3f6}
 .quick-draft-dock{position:fixed;right:16px;bottom:16px;z-index:6;border:0;border-radius:13px;background:#b81025;color:#fff;padding:12px 17px;box-shadow:0 5px 22px #15151c44;font:750 14px/1.3 system-ui,sans-serif;cursor:pointer;max-width:min(410px,calc(100vw - 32px));text-align:left}
 .quick-draft-dock:focus-visible{outline:3px solid #ffb5c3;outline-offset:3px}
+
+.quick-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.quick-minimize-corner{display:inline-grid;place-items:center;border:1px solid #dcdde5;border-radius:10px;background:#f5f5f7;color:#3b3c45;width:38px;height:34px;flex:0 0 38px;font-size:25px;line-height:1;font-weight:550;cursor:pointer}
+.quick-minimize-corner:hover{background:#e9e9ee}
+.timecard-section{margin-top:19px;border:1px solid #e8e8ed;border-radius:15px;overflow:hidden}
+.timecard-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0!important;padding:11px 14px;background:#f5f5f8;font-size:16px;font-weight:800;color:#292b34;letter-spacing:-.01em}
+summary.timecard-section-head{cursor:pointer;list-style:none;display:list-item}
+summary.timecard-section-head::-webkit-details-marker{display:none}
+summary.timecard-section-head:before{content:'▸';display:inline-block;margin-right:9px;color:#82848c}
+details[open]>summary.timecard-section-head:before{content:'▾'}
+.timecard-section-count{float:right;border-radius:99px;background:#e9e9ee;color:#525560;padding:2px 9px;font-size:13px}
+.timecard-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-top:1px solid #ececf0;border-left:4px solid transparent}
+.timecard-list-row:first-child{border-top:0}
+.timecard-list-detail{min-width:0}
+.timecard-list-detail .sub{margin-top:2px;font-size:13px}
+.timecard-list-actions{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.timecard-list-actions .btn{min-height:37px;padding:7px 14px;font-size:14px}
+.timecard-list-status{font-size:13px;font-weight:800;padding:6px 10px;border-radius:9px;white-space:nowrap}
+.timecard-list-row.status-review{border-left-color:#df9c2f;background:#fffaf1}
+.timecard-list-row.status-entered{border-left-color:#40936c}
+.timecard-list-row.status-pto{border-left-color:#6888d2}
+.timecard-list-row.status-empty{border-left-color:#c4c6cd;background:#fbfbfc}
+.timecard-list-status.status-review{background:#ffefd0;color:#8e5b12}
+.timecard-list-status.status-entered{background:#e2f3ea;color:#1c8053}
+.timecard-list-status.status-pto{background:#e8edfc;color:#4264aa}
+.timecard-list-status.status-empty{background:#ededf0;color:#767984}
+.timecard-group-review>.timecard-section-head{background:#fff2dc}
+.timecard-group-empty>.timecard-section-head{background:#f1f1f3}
+@media(max-width:590px){.timecard-list-row{align-items:flex-start}.timecard-list-actions{flex-direction:column;align-items:flex-end;gap:6px}.timecard-list-status{font-size:12px}.timecard-list-detail .sub{line-height:1.4}}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -107,7 +136,31 @@ function drawContent(){const c=$('content');if(tab==='employees'){c.innerHTML='<
  if(employee)editPreferredName(employee);
 });c.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const emp=state.employees.find(e=>e.id===b.dataset.toggle);if(!confirm((emp.enabled?'Disable ':'Enable ')+emp.name+'?'))return;try{await api('employee-status',{id:emp.id,enabled:!emp.enabled});await refresh()}catch(e){alertUser(e.message)}});return}
 if(tab==='pto'){const requests=state.employees.flatMap(e=>e.requests.map(r=>({...r,employee:e.name})));c.innerHTML='<div class="card"><h2>PTO requests</h2>'+(requests.length?requests.map(r=>'<div class="employee"><div><div class="name">'+safe(r.employee)+'</div><div class="sub">'+displayDay(r.date)+' · '+fix(r.hours)+' hours</div></div><div class="row"><span class="tag '+(r.status==='PENDING'?'pending':r.status==='DENIED'?'off':'')+'">'+safe(r.status)+'</span>'+(r.status==='PENDING'?'<button class="btn red" data-decision="APPROVED" data-id="'+safe(r.id)+'">Approve</button><button class="btn outline" data-decision="DENIED" data-id="'+safe(r.id)+'">Deny</button>':'')+'</div></div>').join(''):'<p class="muted">No PTO requests for this week.</p>')+'</div>';c.querySelectorAll('[data-decision]').forEach(b=>b.onclick=async()=>{try{await api('pto-review',{id:b.dataset.id,status:b.dataset.decision});await refresh();alertUser('PTO updated')}catch(e){alertUser(e.message)}});return}
-c.innerHTML='<div class="card"><div class="hrow"><div><h2>Weekly timecards</h2><p class="muted">Review exact punches and weekly rounded hours.</p></div><button id="export" class="btn red">Export CSV</button></div>'+(state.employees.length?state.employees.map(e=>'<div class="employee"><div><div class="name">'+safe(e.name)+'</div><div class="sub">Regular '+fix(e.totals.regularHours)+' · Overtime '+fix(e.totals.overtimeHours)+' · PTO '+fix(e.approvedPto)+(e.totals.warnings.length?' · Needs review':'')+'</div></div><div class="row"><span class="tag '+(e.totals.warnings.length?'pending':'')+'">'+fix(e.totals.workedHours)+' hrs</span><button class="btn outline" data-view="'+safe(e.id)+'">View</button></div></div>').join(''):'<p class="muted">No employees yet. Open Employees to add your first account.</p>')+'</div>';c.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.view)));$('export').onclick=async()=>{try{const r=await fetch('/api/admin/export?week='+week,{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Export unavailable');const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='cfi-payroll-'+week+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(e){alertUser(e.message)}}}
+const grouped={review:[],entered:[],pto:[],empty:[]};
+for(const e of state.employees){
+ const hasPunches=e.punches.length>0;
+ if(e.totals.warnings.length)grouped.review.push(e);
+ else if(hasPunches||e.totals.workedHours>0)grouped.entered.push(e);
+ else if(e.approvedPto>0)grouped.pto.push(e);
+ else grouped.empty.push(e);
+}
+const entryRow=(e,status)=>'<div class="timecard-list-row status-'+status+'"><div class="timecard-list-detail"><div class="name">'+safe(e.name)+'</div><div class="sub">Regular '+fix(e.totals.regularHours)+' · OT '+fix(e.totals.overtimeHours)+' · PTO '+fix(e.approvedPto)+'</div></div>'
+ +'<div class="timecard-list-actions"><span class="timecard-list-status status-'+status+'">'+(status==='review'?'Needs review · '+e.totals.warnings.length+' day'+(e.totals.warnings.length===1?'':'s'):status==='entered'?fix(e.totals.workedHours)+' hrs':status==='pto'?fix(e.approvedPto)+' PTO hrs':'No hours')+'</span><button class="btn outline" data-view="'+safe(e.id)+'">View</button></div></div>';
+const section=(label,status,people,collapse=false)=>{
+ if(!people.length)return '';
+ const content=people.map(e=>entryRow(e,status)).join('');
+ const heading='<span>'+label+'</span><span class="timecard-section-count">'+people.length+'</span>';
+ return collapse?'<details class="timecard-section timecard-group-'+status+'"><summary class="timecard-section-head">'+heading+'</summary><div class="timecard-section-body">'+content+'</div></details>'
+ :'<section class="timecard-section timecard-group-'+status+'"><h3 class="timecard-section-head">'+heading+'</h3><div class="timecard-section-body">'+content+'</div></section>';
+};
+c.innerHTML='<div class="card"><div class="hrow"><div><h2>Weekly timecards</h2><p class="muted">Employees grouped by payroll status. Review incomplete punches first.</p></div><button id="export" class="btn red">Export CSV</button></div>'
+ +(state.employees.length?
+ section('Needs Attention','review',grouped.review)+section('Hours Entered','entered',grouped.entered)+section('PTO Only','pto',grouped.pto)+section('No Hours','empty',grouped.empty,true)
+ :'<p class="muted">No employees yet. Open Employees to add your first account.</p>')+'</div>';
+c.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.view)));
+$('export').onclick=async()=>{try{const r=await fetch('/api/admin/export?week='+week,{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Export unavailable');const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='cfi-payroll-'+week+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(e){alertUser(e.message)}}
+}
+
 function editPreferredName(employee){
  pop('<h2>Preferred Name</h2><p class="muted">Employee: '+safe(employee.name)+'</p><p class="muted">Use the name this employee prefers to see when signing in and clocking in. Their Paychex name remains unchanged for payroll.</p><form id="preferredForm"><label class="label" for="preferredInput">Preferred Name</label><input class="input" id="preferredInput" type="text" maxlength="60" autocomplete="off" placeholder="Example: Mike"><button class="btn red" type="submit">Save Preferred Name</button></form><div class="info">Leave this field blank to use the first name from Paychex.</div>');
  $('preferredInput').value=employee.preferredName||'';
@@ -152,11 +205,16 @@ function quickPunchEntry(employee){
  const eligible=employee.totals.days.map(d=>d.date).filter(d=>d<=state.today);
  pop('<h2>Quick Punch Entry</h2><p class="muted">'+safe(employee.name)+' · Week of '+displayDay(week)+'</p>'
   +'<p class="muted quick-help">Enter for next punch · Backspace on empty row to undo · Shift+Enter for next day. Times: 7:30 AM or 15:30.</p>'
-  +'<button type="button" id="quickMinimize" class="btn outline quick-minimize"><span aria-hidden="true">—</span> Minimize & Keep Draft</button>'
   +'<form id="quickForm"><div id="quickDays"></div><button type="button" class="btn outline quick-add-day" id="quickAddDay">+ Add Another Day</button>'
   +'<p id="quickError" class="quick-error hidden" role="alert"></p><button class="btn red" id="quickSave" style="width:100%;margin-top:12px" type="submit">Save All Punches</button></form>');
  quickDraft={node:$('overlay').firstElementChild,employeeId:employee.id,employeeName:employee.name,week};
- $('quickMinimize').onclick=minimizeQuickDraft;
+ const modalTitle=quickDraft.node.querySelector('h2');
+ modalTitle.classList.add('quick-heading');
+ const minimize=document.createElement('button');
+ minimize.type='button';minimize.id='quickMinimize';minimize.className='quick-minimize-corner';
+ minimize.setAttribute('aria-label','Minimize and keep draft');minimize.title='Minimize and keep draft';
+ minimize.textContent='−';modalTitle.appendChild(minimize);
+ minimize.onclick=minimizeQuickDraft;
  const container=$('quickDays'),chosen=state.today>=week&&state.today<=state.sunday?state.today:week;
  function addDay(date){
   if(container.children.length>=eligible.length){alertUser('All available days have been added');return}
