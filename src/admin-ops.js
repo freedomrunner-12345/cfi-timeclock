@@ -85,6 +85,41 @@ export async function adminOps(store,request){
   store.audit('pto-reviewed',{requestId,employeeId:entry.user_id,status},'admin');
   return result({ok:true});
  }
+ if(route==='/api/admin/punch-batch'&&method==='POST'){
+  // Admin-only: this handler runs behind handleAdmin's password/session gate.
+  const data=await request.json();
+  const employeeId=String(data.employeeId??'').trim();
+  const date=String(data.date??'');
+  const rows=data.punches;
+  if(!/^\\d{1,12}$/.test(employeeId)||!store.one('SELECT id FROM users WHERE id=?',employeeId))return error('Employee not found',404);
+  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||store.week(date)!==week||date>today)return error('Choose a workday in the selected payroll week');
+  if(!Array.isArray(rows)||rows.length<2||rows.length>40||rows.length%2!==0)return error('Enter complete Clock In / Clock Out pairs (2–40 punches)');
+  const normalized=[];
+  const existing=store.all('SELECT at FROM punches WHERE user_id=?',employeeId);
+  const taken=new Set(existing.map(p=>p.at));
+  let previous=0;
+  for(let i=0;i<rows.length;i++){
+   const row=rows[i]||{};
+   const kind=i%2===0?'IN':'OUT';
+   if(row.kind!==kind)return error('Punches must alternate Clock In and Clock Out, starting with In');
+   const at=validStamp(row.at);
+   if(!at)return error('Enter a valid past date and time on line '+(i+1));
+   const iso=at.toISOString();
+   if(store.date(iso)!==date)return error('Line '+(i+1)+' must be on '+date+' (Central Time)');
+   if(at.getTime()<=previous)return error('Punch times must be in chronological order (line '+(i+1)+')');
+   if(taken.has(iso))return error('A punch already exists at '+iso);
+   previous=at.getTime();taken.add(iso);
+   normalized.push({kind,at:iso,punchId:id()});
+  }
+  // Durable Object SQL storage transactions are atomic for sync writes.
+  const now=new Date().toISOString();
+  for(const entry of normalized){
+   store.db.exec('INSERT INTO punches(id,user_id,kind,at,created_at,corrected_at) VALUES (?,?,?,?,?,?)',entry.punchId,employeeId,entry.kind,entry.at,now,now);
+   store.audit('admin-punch-added',{id:entry.punchId,employeeId,kind:entry.kind,at:entry.at,source:'quick-entry'},'admin');
+  }
+  store.db.exec('DELETE FROM sessions WHERE user_id=?',employeeId);
+  return result({ok:true,added:normalized.length});
+ }
  if(route==='/api/admin/punch-add'&&method==='POST'){
   const data=await request.json();
   const employeeId=String(data.employeeId??'').trim();
