@@ -121,6 +121,20 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .paychex-totals td{border-top:2px solid #282b34;padding-top:14px;padding-bottom:14px}
 .paychex-note{font-size:12px;color:#747780;line-height:1.5;margin:11px 1px 0!important}
 @media(max-width:650px){.paychex-card{padding:14px}.paychex-intro{flex-direction:column;gap:6px}.paychex-table td{padding:9px 10px}}
+
+.logo-preview-page{padding:22px}
+.logo-preview-page>p.muted{font-size:14px}
+.logo-preview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}
+.logo-preview-choice{min-width:0;border:1px solid #e7e7ee;border-radius:16px;overflow:hidden;background:#fafafd}
+.logo-preview-choice h3{font-size:16px;font-weight:800;margin:14px 12px 3px}
+.logo-preview-choice>p{font-size:12px;line-height:1.4;min-height:33px;margin:0 12px 10px}
+.logo-preview-stage{height:195px;background:radial-gradient(ellipse at 70% 25%,#522633,#252029 64%,#111319 100%);display:flex;justify-content:center;align-items:center;padding:21px}
+.logo-preview-stage svg{width:min(100%,157px);height:auto;max-height:100%;display:block}
+.logo-preview-original{position:relative;display:block;width:157px;height:157px;overflow:hidden;flex:0 0 157px}
+.logo-preview-original img{position:absolute;width:433px;height:157px;max-width:none;left:-48px;top:0}
+.logo-preview-caption{display:block;text-align:center;padding:12px 8px;color:#6d707c;font-size:12px}
+.logo-preview-footnote{font-size:13px;color:#666a75;border-top:1px solid #e9e9ef;padding-top:14px;margin:10px 0 0}
+@media(max-width:700px){.logo-preview-grid{grid-template-columns:1fr}.logo-preview-stage{height:225px}.logo-preview-choice>p{min-height:0;margin-bottom:12px}}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -165,7 +179,7 @@ async function start(){try{const config=await api('config');try{await api('sessi
 async function refresh(){state=await api('state'+(week?'?week='+week:''));week=state.week;render()}
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
 function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.payType==='SALARY'?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
-$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div><nav class="tabs">'+['overview','paychex','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
+$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div><nav class="tabs">'+['overview','paychex','employees','pto','logos'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests',logos:'Logo Preview'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
 $('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
 function drawPaychexEntry(c){
  const hourly=state.employees.filter(e=>e.payType!=='SALARY').sort((a,b)=>a.name.localeCompare(b.name));
@@ -193,7 +207,28 @@ function drawPaychexEntry(c){
   +'<p class="paychex-note">Regular and overtime hours use the time clock’s weekly rounding. PTO shows approved hours only. Salaried employees ('+salaried.length+') are excluded from this entry table and its totals. This is a reference for manual Paychex entry—not an automatic payroll submission.</p></section>';
  c.querySelectorAll('[data-paychex-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.paychexView)));
 }
-function drawContent(){const c=$('content');if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
+function logoPreviewSvg(kind){
+ const edge=kind==='smooth'?'':Array.from({length:32},(_,i)=>'<rect x="96.5" y="8" width="7" height="7" rx="3.1" fill="#15161a" transform="rotate('+(i*11.25)+' 100 100)"/>').join('');
+ const perimeter=kind==='soft'?'#232429':'#111216';
+ return '<svg viewBox="0 0 200 200" role="img" aria-label="CFI Tire Service modernized tire emblem" xmlns="http://www.w3.org/2000/svg">'
+ +'<defs><path id="arcTop-'+kind+'" d="M 41 100 A 59 59 0 0 1 159 100"/><path id="arcBottom-'+kind+'" d="M 29 100 A 71 71 0 0 0 171 100"/></defs>'
+ +edge+'<circle cx="100" cy="100" r="89" fill="'+perimeter+'" stroke="#08090a" stroke-width="2"/>'
+ +'<circle cx="100" cy="100" r="81" fill="none" stroke="#35363b" stroke-width="2"/>'
+ +'<circle cx="100" cy="100" r="48" fill="#fff" stroke="#0b0b0d" stroke-width="5"/>'
+ +'<circle cx="100" cy="100" r="43" fill="none" stroke="#d5d5d8" stroke-width="1"/>'
+ +'<text fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="900" letter-spacing="1.6" text-anchor="middle"><textPath href="#arcTop-'+kind+'" startOffset="50%">TIRE</textPath></text>'
+ +'<text fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="900" letter-spacing="1.15" text-anchor="middle"><textPath href="#arcBottom-'+kind+'" startOffset="50%">SERVICE</textPath></text>'
+ +'<text x="100" y="114" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="44" font-weight="900" letter-spacing="-2.5" fill="#bd1029" stroke="#101114" stroke-width="1.6" paint-order="stroke fill">CFI</text></svg>';
+}
+function drawLogoPreview(c){
+ c.innerHTML='<section class="card logo-preview-page"><h2>Logo Preview</h2><p class="muted">Temporary admin-only comparison. These previews do not change the employee app. Compare the tire proportions and lettering before choosing.</p>'
+  +'<div class="logo-preview-grid">'
+  +'<article class="logo-preview-choice"><h3>A · Original</h3><p class="muted">Existing company logo for reference.</p><div class="logo-preview-stage"><span class="logo-preview-original"><img src="/cfi-logo.png" alt="Original CFI tire emblem"></span></div><span class="logo-preview-caption">Current source artwork</span></article>'
+  +'<article class="logo-preview-choice"><h3>B · Smooth Tire</h3><p class="muted">Clean, round outer silhouette.</p><div class="logo-preview-stage">'+logoPreviewSvg('smooth')+'</div><span class="logo-preview-caption">No pronounced outer tread</span></article>'
+  +'<article class="logo-preview-choice"><h3>C · Subtle Tread</h3><p class="muted">Rounded tire outline with shallow tread.</p><div class="logo-preview-stage">'+logoPreviewSvg('soft')+'</div><span class="logo-preview-caption">Modest edge detail, same overall shape</span></article>'
+  +'</div><p class="logo-preview-footnote">Nothing is applied or saved here. Tell me A, B, or C and any proportions you would like adjusted.</p></section>';
+}
+function drawContent(){const c=$('content');if(tab==='logos'){drawLogoPreview(c);return}if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
  const people=state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name));
  c.innerHTML='<details class="card employee-form-details"><summary>Import employee roster</summary><p class="muted">Import a roster file (.tsv).</p><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></details>'
  +'<details class="card employee-form-details"><summary>Add employee</summary><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></details>'
