@@ -125,7 +125,7 @@ function quickPunchEntry(employee){
   if(!confirm('Save '+punches.length+' punches for '+employee.name+' on '+displayDay(date)+'?'))return;
   const button=$('quickSave');button.disabled=true;button.textContent='Saving…';
   try{
-   const result=await api('punch-batch',{employeeId:employee.id,date,punches});
+   const result=await api('punch-batch?week='+encodeURIComponent(week),{employeeId:employee.id,date,punches});
    hide();await refresh();alertUser(result.added+' punches saved');
   }catch(e){fail(e.message);button.disabled=false;button.textContent='Save Punches'}
  };
