@@ -1,0 +1,25 @@
+name: Deploy CFI Time Clock (direct)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfi-timeclock-direct-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy directly with Wrangler
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out current main branch
+        uses: actions/checkout@v4
+      - name: Deploy to Cloudflare Workers (bypasses Workers Builds)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
