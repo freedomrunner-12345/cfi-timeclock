@@ -285,28 +285,55 @@ function transitionToSignin(){
  const screen=$('welcomeTouch');
  if(!screen||document.querySelector('.welcome-transition-snapshot'))return;
  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){signin();return}
+ const source=screen.querySelector('.welcome-center strong');
+ if(!source){signin();return}
+ const sourceBox=source.getBoundingClientRect();
+ const sourceStyle=getComputedStyle(source);
  const snapshot=screen.cloneNode(true);
  snapshot.removeAttribute('id');
  snapshot.classList.add('welcome-transition-snapshot');
  snapshot.setAttribute('aria-hidden','true');
+ // Keep the animated background during the handoff, but only one visible title.
+ snapshot.querySelector('.welcome-center strong')?.remove();
  document.body.appendChild(snapshot);
+ const movingTitle=source.cloneNode(true);
+ movingTitle.setAttribute('aria-hidden','true');
+ movingTitle.className='welcome-moving-title';
+ Object.assign(movingTitle.style,{
+  position:'fixed',left:sourceBox.left+'px',top:sourceBox.top+'px',
+  width:sourceBox.width+'px',height:sourceBox.height+'px',
+  margin:'0',fontSize:sourceStyle.fontSize,fontWeight:sourceStyle.fontWeight,
+  letterSpacing:sourceStyle.letterSpacing,lineHeight:sourceStyle.lineHeight,
+  color:'#fff',whiteSpace:'nowrap',transformOrigin:'top left',
+  zIndex:'10002',pointerEvents:'none'
+ });
+ document.body.appendChild(movingTitle);
  signin();
- const brand=document.querySelector('.login-mode .top');
+ const destination=document.querySelector('.login-mode .login-brand-caption');
+ const badge=document.querySelector('.login-mode .emblem-crop');
  const card=document.querySelector('.login-mode .signin-card');
+ if(!destination){snapshot.remove();movingTitle.remove();return}
+ const target=destination.getBoundingClientRect();
+ const targetStyle=getComputedStyle(destination);
+ destination.style.visibility='hidden';
  const easing='cubic-bezier(.22,1,.36,1)';
- // Fade the existing scene away smoothly; the new layout moves only a few pixels.
- if(brand)brand.animate([
-  {opacity:0,transform:'translateY(9px)'},
-  {opacity:1,transform:'translateY(0)'}
- ],{duration:460,delay:100,easing});
+ const moving=movingTitle.animate([
+  {transform:'translate3d(0,0,0) scale(1)',color:'#fff'},
+  {transform:'translate3d('+(target.left-sourceBox.left)+'px,'+(target.top-sourceBox.top)+'px,0) scale('+(target.width/sourceBox.width)+','+(target.height/sourceBox.height)+')',color:targetStyle.color}
+ ],{duration:760,easing,fill:'forwards'});
+ if(badge)badge.animate([
+  {opacity:0,transform:'translateY(7px) scale(.96)'},
+  {opacity:1,transform:'translateY(0) scale(1)'}
+ ],{duration:510,delay:180,easing});
  if(card)card.animate([
   {opacity:0,transform:'translateY(12px)'},
   {opacity:1,transform:'translateY(0)'}
- ],{duration:480,delay:150,easing});
- const fade=snapshot.animate([
-  {opacity:1},{opacity:1,offset:.1},{opacity:0}
- ],{duration:490,easing:'ease-in-out',fill:'forwards'});
- fade.finished.then(()=>snapshot.remove(),()=>snapshot.remove());
+ ],{duration:550,delay:210,easing});
+ const background=snapshot.animate([
+  {opacity:1},{opacity:.9,offset:.15},{opacity:0}
+ ],{duration:690,easing:'ease-in-out',fill:'forwards'});
+ const cleanup=()=>{destination.style.visibility='';snapshot.remove();movingTitle.remove()};
+ Promise.allSettled([moving.finished,background.finished]).then(cleanup,cleanup);
 }
 function showClockAfterSignin(){
  const outgoing=document.querySelector('.login-mode .signin-card');
