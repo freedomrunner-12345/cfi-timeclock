@@ -31,10 +31,12 @@
 .timecard-punch-time{font-weight:550;font-variant-numeric:tabular-nums}
 .timecard-empty{padding:8px 0;color:#8d909b;font-size:14px}
 .timecard-lunch{margin:6px 0}
-.timecard-total{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:2px solid #30323b;margin:18px 0 12px;padding:14px 2px 4px}
-.timecard-total strong{font-size:17px;color:#22232a}
-.timecard-total-detail{font-size:13px;color:#70737d;margin-top:3px}
-.timecard-total .timecard-total-value{font-size:22px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.timecard-total{border-top:2px solid #30323b;margin:18px 0 12px;padding:12px 2px 2px}
+.modal .timecard-total h3{font-size:17px;margin:0 0 9px!important}
+.timecard-total-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 0;font-size:15px;color:#555965}
+.timecard-total-row strong{font-size:15px;color:#252832;font-variant-numeric:tabular-nums}
+.timecard-grand-total{border-top:1px solid #c8c9d0;margin-top:8px;padding-top:11px;font-weight:800;color:#23252f}
+.timecard-grand-total strong{font-size:21px;color:#23252f}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview';
@@ -97,7 +99,11 @@ function showCard(e){
  const dates=visibleDays.map(d=>'<section class="timecard-day"><h3 class="timecard-day-title"><span>'+displayDay(d.date)+'</span><span class="timecard-day-hours">'+fix(d.minutes/60)+' hrs</span></h3>'
   +(d.punches.length?d.punches.map(p=>'<div class="day timecard-punch"><span><b>'+(p.kind==='IN'?'In':'Out')+'</b><span class="timecard-punch-time">'+time(p.at)+'</span></span><div class="row"><button class="btn outline" data-edit="'+safe(p.id)+'">Edit</button><button class="btn outline" style="color:#b81025" data-delete="'+safe(p.id)+'">Delete</button></div></div>').join(''):'<div class="timecard-empty">No punches recorded</div>')
   +(d.lunchCredit?'<div class="sub timecard-lunch">30-minute lunch credit included</div>':'')+'</section>').join('');
- const total='<div class="timecard-total"><div><strong>Weekly Total</strong><div class="timecard-total-detail">Regular '+fix(e.totals.regularHours)+' · Overtime '+fix(e.totals.overtimeHours)+'</div></div><strong class="timecard-total-value">'+fix(e.totals.workedHours)+' hrs</strong></div>';
+ const total='<div class="timecard-total"><h3>Weekly Total</h3>'
+  +'<div class="timecard-total-row"><span>Regular</span><strong>'+fix(e.totals.regularHours)+' hrs</strong></div>'
+  +'<div class="timecard-total-row"><span>Overtime</span><strong>'+fix(e.totals.overtimeHours)+' hrs</strong></div>'
+  +'<div class="timecard-total-row"><span>PTO</span><strong>'+fix(e.approvedPto)+' hrs</strong></div>'
+  +'<div class="timecard-total-row timecard-grand-total"><span>TOTAL</span><strong>'+fix(e.totals.workedHours+e.approvedPto)+' hrs</strong></div></div>';
  pop(info+(e.totals.warnings.length?'<div class="warn"><strong>Needs Review Before Payroll</strong><div style="margin-top:8px">'+e.totals.days.filter(d=>d.issues?.length).map(d=>'<div style="margin-top:6px">'+displayDay(d.date)+': '+d.issues.map(safe).join(' ')+'</div>').join('')+'</div>':'')
   +'<button class="btn red" id="quickPunch" style="width:100%;margin:8px 0">Quick Punch Entry</button><button class="btn outline" id="addPunch" style="width:100%;margin:0 0 15px">+ Add Missed Punch</button>'
   +dates+total+'<div class="info">Adding, editing, or deleting punches changes recorded time. Each change is retained in the administrator audit log. PTO and other employees are not affected.</div>');
