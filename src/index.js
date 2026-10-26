@@ -111,6 +111,7 @@ export class Timeclock {
     const userCols=[...this.db.exec('PRAGMA table_info(users)')].map(column=>column.name);
     if(!userCols.includes('is_archived'))this.db.exec('ALTER TABLE users ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0');
     if(!userCols.includes('is_tester'))this.db.exec('ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0');
+    if(!userCols.includes('pay_type'))this.db.exec("ALTER TABLE users ADD COLUMN pay_type TEXT NOT NULL DEFAULT 'HOURLY'");
     this.db.exec('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS punches (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, created_at TEXT NOT NULL, corrected_at TEXT)');
     this.db.exec('CREATE TABLE IF NOT EXISTS pto (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, hours REAL NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, reviewed_at TEXT)');
