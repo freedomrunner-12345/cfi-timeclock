@@ -223,6 +223,43 @@ main.welcome-mode{position:relative;width:100%;max-width:none;height:100svh;min-
 .signin-crossfade-veil>main.login-mode{width:100%;max-width:520px;min-height:100svh;overflow:hidden}
 .welcome-transition-snapshot{background:#101116;z-index:25!important}
 @media(prefers-reduced-motion:reduce){.signin-crossfade-veil{display:none}}
+
+/* Calm, spacious clock layout for shared tablets. */
+main.signed-in-mode{justify-content:flex-start;padding-top:max(45px,env(safe-area-inset-top));padding-bottom:35px}
+.employee-greeting{margin-bottom:34px}
+.employee-greeting .eyebrow{font-size:18px;letter-spacing:.075em}
+.employee-greeting .hello{font-size:clamp(32px,7.4vw,42px);line-height:1.14;margin-top:12px}
+.primary-zone{padding:31px 24px 27px;border-radius:27px}
+.status-line{font-size:20px;margin-bottom:26px}
+.main-clock-button{min-height:100px}
+.last-punch{font-size:19px;margin-top:23px}
+.daily-section{margin-top:42px;padding:0 5px}
+.quiet-heading{font-size:22px;margin-bottom:18px}
+.compact-punches{gap:6px}
+.compact-punches .punch-entry{padding:10px 0;font-size:21px;gap:17px}
+.compact-punches .punch-label{min-width:46px}
+.compact-punches .punch-time{font-size:23px}
+.daily-section .empty{font-size:19px;padding:10px 0}
+.clock-home .option-actions{margin-top:43px;gap:14px}
+.clock-home .option-button{font-size:19px;min-height:98px}
+#app .session-controls{margin-top:33px;gap:12px}
+#app .session-controls #signout{font-size:20px!important;min-height:43px!important}
+#app .session-controls .inactivity-label{font-size:17px}
+.questions-signin{text-align:center;margin:17px 0 10px}
+.questions-clock{margin:22px 0 10px;text-align:center}
+.questions-link{border:0;background:transparent;color:#9f2038;padding:10px 15px;min-height:45px;border-radius:10px;font-size:19px;font-weight:750;cursor:pointer}
+.questions-link span{margin-left:3px;display:inline-block;transition:transform .15s ease}
+.questions-link:active span{transform:translateX(3px)}
+.questions-link:focus-visible{outline:3px solid #b81025;outline-offset:2px}
+.questions-modal{text-align:center;clear:both;padding:8px 0 4px}
+.questions-modal h2{font-size:29px;margin:5px 0 13px}
+.questions-description{font-size:19px;line-height:1.4;margin:0 0 18px;color:#565862}
+.questions-qr{width:min(245px,75vw);background:#fff;padding:9px;border:1px solid #e5e6ea;border-radius:16px;margin:0 auto 19px}
+.questions-qr svg{display:block;width:100%;height:auto}
+.questions-sms{display:inline-block;background:#b81025;border-radius:13px;color:white;padding:13px 20px;font-size:18px;font-weight:750;text-decoration:none}
+.questions-number{font-size:16px;color:#777985;margin:14px 0 0}
+@media(max-height:740px){main.signed-in-mode{padding-top:25px}.employee-greeting{margin-bottom:25px}.primary-zone{padding:25px 20px}.daily-section{margin-top:32px}.clock-home .option-actions{margin-top:33px}#app .session-controls{margin-top:24px}}
+@media(max-width:360px){.employee-greeting .hello{font-size:31px}.status-line{font-size:18px}.compact-punches .punch-time{font-size:21px}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -268,6 +305,18 @@ function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden')
 function modal(s){$('overlay').innerHTML='<div class="modal"><button id="close" class="close">×</button>'+s+'</div>';$('overlay').classList.remove('hidden');$('close').onclick=close;$('overlay').onclick=e=>{if(e.target===$('overlay'))close()}}
 function close(){$('overlay').classList.add('hidden')}
 
+// QR data encoded for sms:+15313890178, without relying on third-party services.
+function contactQrSvg(){
+ const bits=Array.from('1fd4e7f82df20dd6f176e96ebb756a5d8226a0ff555fc0108013fdc97e81bcb2395fd5766c0b368ec0c4695a7f7186e853aad0ef3ff0091887f775460b522375ebf1baccb3dd2a84e09754ffd3b51',h=>parseInt(h,16).toString(2).padStart(4,'0')).join('').slice(-625);
+ let squares='';
+ for(let y=0;y<25;y++)for(let x=0;x<25;x++)if(bits[y*25+x]==='1')squares+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 33 33" aria-label="Scan to text Travis" role="img"><rect x="-4" y="-4" width="33" height="33" fill="#fff"/><g fill="#111116">'+squares+'</g></svg>';
+}
+function questionsLink(){return '<button type="button" class="questions-link" data-questions aria-label="Questions? Text Travis">Questions? <span aria-hidden="true">→</span></button>'}
+function showQuestions(){
+ modal('<div class="questions-modal"><h2>Questions?</h2><p class="questions-description">Scan with your phone to text Travis.</p><div class="questions-qr">'+contactQrSvg()+'</div><a class="questions-sms" href="sms:+15313890178">Open Text Message →</a><p class="questions-number">To: (531) 389-0178</p></div>');
+}
+function wireQuestions(){document.querySelectorAll('[data-questions]').forEach(b=>b.onclick=showQuestions)}
 function preserveSessionControls(){
  const controls=$('sessionControls');
  if(controls&&controls.parentElement===$('app'))document.querySelector('main').appendChild(controls);
@@ -378,7 +427,8 @@ function signin(){
   +'<input type="hidden" name="id" id="id">'
   +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
   +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
-  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div>';
+  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div>';
+ wireQuestions();
  const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
  function renderKeypad(){
   const value=id.value;
@@ -440,11 +490,12 @@ function render(){
   +'<div class="option-actions" aria-label="More Actions">'
   +'<button class="option-button" id="pto" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg><span>Request Time Off</span></button>'
   +'<button class="option-button" id="history" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>My Timecard</span></button>'
-  +'</div></div>';
+  +'<div class="questions-clock">'+questionsLink()+'</div></div>';
  $('app').appendChild($('sessionControls'));
  $('punch').onclick=()=>punch(on?'OUT':'IN');
  $('pto').onclick=pto;
  $('history').onclick=history;
+ wireQuestions();
 }
 function showSuccess(kind,isFirst,at){
  document.getElementById('success-layer')?.remove();
