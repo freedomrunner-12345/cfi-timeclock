@@ -208,24 +208,22 @@ function drawPaychexEntry(c){
  c.querySelectorAll('[data-paychex-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.paychexView)));
 }
 function logoPreviewSvg(kind){
- const edge=kind==='smooth'?'':Array.from({length:32},(_,i)=>'<rect x="96.5" y="8" width="7" height="7" rx="3.1" fill="#15161a" transform="rotate('+(i*11.25)+' 100 100)"/>').join('');
- const perimeter=kind==='soft'?'#232429':'#111216';
- return '<svg viewBox="0 0 200 200" role="img" aria-label="CFI Tire Service modernized tire emblem" xmlns="http://www.w3.org/2000/svg">'
- +'<defs><path id="arcTop-'+kind+'" d="M 41 100 A 59 59 0 0 1 159 100"/><path id="arcBottom-'+kind+'" d="M 29 100 A 71 71 0 0 0 171 100"/></defs>'
- +edge+'<circle cx="100" cy="100" r="89" fill="'+perimeter+'" stroke="#08090a" stroke-width="2"/>'
- +'<circle cx="100" cy="100" r="81" fill="none" stroke="#35363b" stroke-width="2"/>'
- +'<circle cx="100" cy="100" r="48" fill="#fff" stroke="#0b0b0d" stroke-width="5"/>'
- +'<circle cx="100" cy="100" r="43" fill="none" stroke="#d5d5d8" stroke-width="1"/>'
- +'<text fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="900" letter-spacing="1.6" text-anchor="middle"><textPath href="#arcTop-'+kind+'" startOffset="50%">TIRE</textPath></text>'
- +'<text fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="900" letter-spacing="1.15" text-anchor="middle"><textPath href="#arcBottom-'+kind+'" startOffset="50%">SERVICE</textPath></text>'
- +'<text x="100" y="114" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="44" font-weight="900" letter-spacing="-2.5" fill="#bd1029" stroke="#101114" stroke-width="1.6" paint-order="stroke fill">CFI</text></svg>';
+ // Original-inspired tire proportions: subtle surface variation only, never radial spikes.
+ const tread=kind==='soft'?Array.from({length:48},(_,i)=>'<path d="M 99 11 Q 100 8 101 11" fill="none" stroke="#26272b" stroke-width="4" stroke-linecap="round" transform="rotate('+(i*7.5)+' 100 100)"/>').join(''):'';
+ return '<svg viewBox="0 0 200 200" role="img" aria-label="Faithful CFI Tire Service emblem preview" xmlns="http://www.w3.org/2000/svg">'
+ +'<defs><path id="arcTop-'+kind+'" d="M 35 100 A 65 65 0 0 1 165 100"/><path id="arcBottom-'+kind+'" d="M 33 100 A 67 67 0 0 0 167 100"/></defs>'
+ +'<circle cx="100" cy="100" r="89" fill="#111114"/>'+tread
+ +'<circle cx="100" cy="100" r="47" fill="#fff" stroke="#151518" stroke-width="3.7"/>'
+ +'<text fill="#fff" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="19" font-weight="900" letter-spacing="1.35" text-anchor="middle"><textPath href="#arcTop-'+kind+'" startOffset="50%">TIRE</textPath></text>'
+ +'<text fill="#fff" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="19" font-weight="900" letter-spacing=".35" text-anchor="middle"><textPath href="#arcBottom-'+kind+'" startOffset="50%">SERVICE</textPath></text>'
+ +'<text x="100" y="112" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="41" font-weight="900" letter-spacing="-2.1" fill="#c20d27" stroke="#1b1b1f" stroke-width="1.25" paint-order="stroke fill">CFI</text></svg>';
 }
 function drawLogoPreview(c){
  c.innerHTML='<section class="card logo-preview-page"><h2>Logo Preview</h2><p class="muted">Temporary admin-only comparison. These previews do not change the employee app. Compare the tire proportions and lettering before choosing.</p>'
   +'<div class="logo-preview-grid">'
   +'<article class="logo-preview-choice"><h3>A · Original</h3><p class="muted">Existing company logo for reference.</p><div class="logo-preview-stage"><span class="logo-preview-original"><img src="/cfi-logo.png" alt="Original CFI tire emblem"></span></div><span class="logo-preview-caption">Current source artwork</span></article>'
-  +'<article class="logo-preview-choice"><h3>B · Smooth Tire</h3><p class="muted">Clean, round outer silhouette.</p><div class="logo-preview-stage">'+logoPreviewSvg('smooth')+'</div><span class="logo-preview-caption">No pronounced outer tread</span></article>'
-  +'<article class="logo-preview-choice"><h3>C · Subtle Tread</h3><p class="muted">Rounded tire outline with shallow tread.</p><div class="logo-preview-stage">'+logoPreviewSvg('soft')+'</div><span class="logo-preview-caption">Modest edge detail, same overall shape</span></article>'
+  +'<article class="logo-preview-choice"><h3>B · Clean Original</h3><p class="muted">Original proportions with a smooth, clean edge.</p><div class="logo-preview-stage">'+logoPreviewSvg('smooth')+'</div><span class="logo-preview-caption">Smooth tire edge, original-style lettering</span></article>'
+  +'<article class="logo-preview-choice"><h3>C · Light Texture</h3><p class="muted">Same proportions and font, with a light tire texture.</p><div class="logo-preview-stage">'+logoPreviewSvg('soft')+'</div><span class="logo-preview-caption">Very subtle texture, same proportions</span></article>'
   +'</div><p class="logo-preview-footnote">Nothing is applied or saved here. Tell me A, B, or C and any proportions you would like adjusted.</p></section>';
 }
 function drawContent(){const c=$('content');if(tab==='logos'){drawLogoPreview(c);return}if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
