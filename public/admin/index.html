@@ -143,6 +143,7 @@ function quickPunchEntry(employee){
    line.innerHTML='<span class="quick-kind '+(kind==='IN'?'quick-in':'quick-out')+'">'+kind+'</span><input class="input quick-time" type="text" placeholder="8:00 AM" autocomplete="off" spellcheck="false" aria-label="'+kind+' punch '+(i+1)+' for '+displayDay(select.value)+'">';
    rows.appendChild(line);
    const input=line.querySelector('input');
+   input.addEventListener('blur',()=>{const formatted=formatPunchTime(input.value);if(formatted)input.value=formatted});
    input.addEventListener('keydown',event=>{
     if(event.key==='Backspace'&&!input.value&&line===rows.lastElementChild&&rows.children.length>1){
      event.preventDefault();line.remove();rows.lastElementChild.querySelector('input').focus();return;
@@ -178,6 +179,12 @@ function quickPunchEntry(employee){
   addLine(false);updateAddButton();
  }
  function updateAddButton(){$('quickAddDay').disabled=container.children.length>=eligible.length}
+ function formatPunchTime(value){
+  const parsed=parseTime(value);
+  if(!parsed)return null;
+  const [hours,minutes]=parsed.split(':').map(Number);
+  return (hours%12||12)+':'+String(minutes).padStart(2,'0')+' '+(hours>=12?'PM':'AM');
+ }
  function parseTime(value){
   const raw=value.trim().toLowerCase().replace(/\./g,'').replace(/\s+/g,'');
   const m=raw.match(/^(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)?$/);
