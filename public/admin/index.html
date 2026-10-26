@@ -87,6 +87,8 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .tester-label{display:inline-block;background:#ede8ff;color:#6945ae;border-radius:6px;font-size:10px;padding:3px 6px;vertical-align:middle;font-weight:850;letter-spacing:.04em}
 .compact-employee.is-tester{background:#faf8ff}
 @media(max-width:650px){.compact-employee{align-items:flex-start}.compact-employee .employee-actions{flex-wrap:wrap;justify-content:flex-end}.compact-employee .employee-actions .btn{min-height:31px}}
+.timecard-list-row.status-test{border-left-color:#8b75c4;background:#faf8ff}
+.timecard-list-status.status-test{background:#eee9fb;color:#684f9c}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -172,16 +174,17 @@ c.querySelector('#importroster').onclick=async()=>{
 });
 c.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const emp=state.employees.find(e=>e.id===b.dataset.toggle);if(!confirm((emp.enabled?'Disable ':'Enable ')+emp.name+'?'))return;try{await api('employee-status',{id:emp.id,enabled:!emp.enabled});await refresh()}catch(e){alertUser(e.message)}});return}
 if(tab==='pto'){const requests=state.employees.flatMap(e=>e.requests.map(r=>({...r,employee:e.name})));c.innerHTML='<div class="card"><h2>PTO requests</h2>'+(requests.length?requests.map(r=>'<div class="employee"><div><div class="name">'+safe(r.employee)+'</div><div class="sub">'+displayDay(r.date)+' · '+fix(r.hours)+' hours</div></div><div class="row"><span class="tag '+(r.status==='PENDING'?'pending':r.status==='DENIED'?'off':'')+'">'+safe(r.status)+'</span>'+(r.status==='PENDING'?'<button class="btn red" data-decision="APPROVED" data-id="'+safe(r.id)+'">Approve</button><button class="btn outline" data-decision="DENIED" data-id="'+safe(r.id)+'">Deny</button>':'')+'</div></div>').join(''):'<p class="muted">No PTO requests for this week.</p>')+'</div>';c.querySelectorAll('[data-decision]').forEach(b=>b.onclick=async()=>{try{await api('pto-review',{id:b.dataset.id,status:b.dataset.decision});await refresh();alertUser('PTO updated')}catch(e){alertUser(e.message)}});return}
-const grouped={review:[],entered:[],pto:[],empty:[]};
+const grouped={review:[],entered:[],pto:[],empty:[],test:[]};
 for(const e of state.employees){
  const hasPunches=e.punches.length>0;
- if(e.totals.warnings.length)grouped.review.push(e);
+ if(e.isTester)grouped.test.push(e);
+ else if(e.totals.warnings.length)grouped.review.push(e);
  else if(hasPunches||e.totals.workedHours>0)grouped.entered.push(e);
  else if(e.approvedPto>0)grouped.pto.push(e);
  else grouped.empty.push(e);
 }
 const entryRow=(e,status)=>'<div class="timecard-list-row status-'+status+'"><div class="timecard-list-detail"><div class="name">'+safe(e.name)+'</div><div class="sub">Regular '+fix(e.totals.regularHours)+' · OT '+fix(e.totals.overtimeHours)+' · PTO '+fix(e.approvedPto)+'</div></div>'
- +'<div class="timecard-list-actions"><span class="timecard-list-status status-'+status+'">'+(status==='review'?'Needs review · '+e.totals.warnings.length+' day'+(e.totals.warnings.length===1?'':'s'):status==='entered'?fix(e.totals.workedHours)+' hrs':status==='pto'?fix(e.approvedPto)+' PTO hrs':'No hours')+'</span><button class="btn outline" data-view="'+safe(e.id)+'">View</button></div></div>';
+ +'<div class="timecard-list-actions"><span class="timecard-list-status status-'+status+'">'+(status==='review'?'Needs review · '+e.totals.warnings.length+' day'+(e.totals.warnings.length===1?'':'s'):status==='entered'?fix(e.totals.workedHours)+' hrs':status==='pto'?fix(e.approvedPto)+' PTO hrs':status==='test'?'Tester · '+fix(e.totals.workedHours)+' hrs':'No hours')+'</span><button class="btn outline" data-view="'+safe(e.id)+'">View</button></div></div>';
 const section=(label,status,people,collapse=false)=>{
  if(!people.length)return '';
  const content=people.map(e=>entryRow(e,status)).join('');
@@ -191,7 +194,7 @@ const section=(label,status,people,collapse=false)=>{
 };
 c.innerHTML='<div class="card"><div class="hrow"><div><h2>Weekly timecards</h2><p class="muted">Employees grouped by payroll status. Review incomplete punches first.</p></div><button id="export" class="btn red">Export CSV</button></div>'
  +(state.employees.length?
- section('Needs Attention','review',grouped.review)+section('Hours Entered','entered',grouped.entered)+section('PTO Only','pto',grouped.pto)+section('No Hours','empty',grouped.empty,true)
+ section('Needs Attention','review',grouped.review)+section('Hours Entered','entered',grouped.entered)+section('PTO Only','pto',grouped.pto)+section('No Hours','empty',grouped.empty,true)+section('Test Accounts (excluded from totals)','test',grouped.test,true)
  :'<p class="muted">No employees yet. Open Employees to add your first account.</p>')+'</div>';
 c.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.view)));
 $('export').onclick=async()=>{try{const r=await fetch('/api/admin/export?week='+week,{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Export unavailable');const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='cfi-payroll-'+week+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(e){alertUser(e.message)}}
