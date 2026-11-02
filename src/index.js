@@ -83,7 +83,7 @@ function compute(punches, monday, today) {
         issues.push('Unrecognized punch type.');
       }
     }
-    if (openIn !== null) issues.push('Clock In has no matching Clock Out.');
+    if (openIn !== null && day < today) issues.push('Missing Clock Out — employee clocked in but did not clock out that day.');
     // Display and retain safe completed intervals, but never present
     // conflicting or incomplete days as finalized payroll.
     const lunchCredit = pairedBreaks ? 30 : 0;
