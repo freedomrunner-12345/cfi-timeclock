@@ -35,3 +35,17 @@ test('rejects incomplete, duplicate, undated or ambiguous entries',()=>{
     'Monday November 2: 8 AM, 5 PM'
   ]) assert.ok(parse(input,week).errors.length>0,input);
 });
+
+
+test('accepts ordinary bulleted and numbered dictated timecards',()=>{
+  const examples=[
+    '- October 26: 7:33 am, 11:41 am, 12:40 pm, 5:30 pm.\n- October 27: 7:39 am, 12:11 pm, 1:25 pm, 5:34 pm.',
+    '• October 26: 7:33 AM, 5:30 PM\n• October 27: 8 AM, 5 PM',
+    '1. October 26: 7:33 AM, 5:30 PM\n2. October 27: 8 AM, 5 PM'
+  ];
+  for(const input of examples){
+    const r=parse(input,week);
+    assert.deepEqual(Array.from(r.errors),[]);
+    assert.deepEqual(Array.from(r.days,d=>d.date),['2026-10-26','2026-10-27']);
+  }
+});
