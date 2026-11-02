@@ -5,7 +5,7 @@
   const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
   const monthPattern=months.map(m=>m+'|'+m.slice(0,3)).join('|');
   const datePattern=new RegExp('\\b(?:(?:'+weekdays.join('|')+')(?:\\s*,?\\s*(?:(?:'+monthPattern+')\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?|\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?))?|(?:'+monthPattern+')\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?|\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)\\b','gi');
-  const timePattern=/\b(?:(?:[01]?\d|2[0-3]):[0-5]\d|(?:1[0-2]|0?[1-9])(?:\s*:\s*[0-5]\d)?)\s*(?:a\.?m\.?|p\.?m\.?)|\b(?:noon|midnight)\b/gi;
+  const timePattern=/\b(?:1[0-2]|0?[1-9])(?:\s*:\s*[0-5]\d)?\s*(?:a\.?m\.?|p\.?m\.?)|\b(?:noon|midnight)\b/gi;
   const dayName=iso=>weekdays[new Date(iso+'T12:00:00Z').getUTCDay()];
   const format=n=>(Math.floor(n/60)%12||12)+':'+String(n%60).padStart(2,'0')+' '+(n>=720?'PM':'AM');
   function parseTime(raw){
