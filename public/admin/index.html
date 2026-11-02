@@ -241,7 +241,7 @@ c.querySelectorAll('[data-delete-employee]').forEach(b=>b.onclick=()=>{
  };
 });
 c.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{const emp=state.employees.find(e=>e.id===b.dataset.toggle);if(!confirm((emp.enabled?'Disable ':'Enable ')+emp.name+'?'))return;try{await api('employee-status',{id:emp.id,enabled:!emp.enabled});await refresh()}catch(e){alertUser(e.message)}});return}
-if(tab==='pto'){const requests=state.employees.flatMap(e=>e.requests.map(r=>({...r,employee:e.name})));c.innerHTML='<div class="card"><h2>PTO requests</h2>'+(requests.length?requests.map(r=>'<div class="employee"><div><div class="name">'+safe(r.employee)+'</div><div class="sub">'+displayDay(r.date)+' · '+fix(r.hours)+' hours</div></div><div class="row"><span class="tag '+(r.status==='PENDING'?'pending':r.status==='DENIED'?'off':'')+'">'+safe(r.status)+'</span>'+(r.status==='PENDING'?'<button class="btn red" data-decision="APPROVED" data-id="'+safe(r.id)+'">Approve</button><button class="btn outline" data-decision="DENIED" data-id="'+safe(r.id)+'">Deny</button>':'')+'</div></div>').join(''):'<p class="muted">No PTO requests for this week.</p>')+'</div>';c.querySelectorAll('[data-decision]').forEach(b=>b.onclick=async()=>{try{await api('pto-review',{id:b.dataset.id,status:b.dataset.decision});await refresh();alertUser('PTO updated')}catch(e){alertUser(e.message)}});return}
+if(tab==='pto'){const requests=state.employees.flatMap(e=>e.requests.map(r=>({...r,employee:e.name})));c.innerHTML='<div class="card"><div class="hrow"><h2>PTO requests</h2><button type="button" class="btn red" id="adminAddPto">+ Add PTO</button></div>'+(requests.length?requests.map(r=>'<div class="employee"><div><div class="name">'+safe(r.employee)+'</div><div class="sub">'+displayDay(r.date)+' · '+fix(r.hours)+' hours</div></div><div class="row"><span class="tag '+(r.status==='PENDING'?'pending':r.status==='DENIED'?'off':'')+'">'+safe(r.status)+'</span>'+(r.status==='PENDING'?'<button class="btn red" data-decision="APPROVED" data-id="'+safe(r.id)+'">Approve</button><button class="btn outline" data-decision="DENIED" data-id="'+safe(r.id)+'">Deny</button>':'')+'</div></div>').join(''):'<p class="muted">No PTO requests for this week.</p>')+'</div>';$('adminAddPto').onclick=()=>addAdminPto();c.querySelectorAll('[data-decision]').forEach(b=>b.onclick=async()=>{try{await api('pto-review',{id:b.dataset.id,status:b.dataset.decision});await refresh();alertUser('PTO updated')}catch(e){alertUser(e.message)}});return}
 const grouped={review:[],entered:[],pto:[],empty:[],salary:[]};
 for(const e of state.employees){
  const hasPunches=e.punches.length>0;
@@ -296,14 +296,46 @@ function showCard(e){
   +'<div class="timecard-total-row"><span>PTO</span><strong>'+fix(e.approvedPto)+' hrs</strong></div>'
   +'<div class="timecard-total-row timecard-grand-total"><span>TOTAL</span><strong>'+fix(e.totals.workedHours+e.approvedPto)+' hrs</strong></div></div>';
  pop(info+(e.totals.warnings.length?'<div class="warn"><strong>Needs Review Before Payroll</strong><div style="margin-top:8px">'+e.totals.days.filter(d=>d.issues?.length).map(d=>'<div style="margin-top:6px">'+displayDay(d.date)+': '+d.issues.map(safe).join(' ')+'</div>').join('')+'</div>':'')
-  +'<button class="btn red" id="quickPunch" style="width:100%;margin:8px 0">Quick Punch Entry</button><button class="btn outline" id="addPunch" style="width:100%;margin:0 0 15px">+ Add Missed Punch</button>'
+  +'<button class="btn outline" id="addEmployeePto" style="width:100%;margin:8px 0">+ Add PTO</button><button class="btn red" id="quickPunch" style="width:100%;margin:8px 0">Quick Punch Entry</button><button class="btn outline" id="addPunch" style="width:100%;margin:0 0 15px">+ Add Missed Punch</button>'
   +dates+total+'<div class="info">Adding, editing, or deleting punches changes recorded time. Each change is retained in the administrator audit log. PTO and other employees are not affected.</div>');
  $('addPunch').onclick=()=>addPunch(e);
+ $('addEmployeePto').onclick=()=>addAdminPto(e.id);
  $('quickPunch').onclick=()=>quickPunchEntry(e);
  $('overlay').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(e,b.dataset.edit));
  $('overlay').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deletePunch(e,b.dataset.delete));
 }
 
+function addAdminPto(selectedEmployeeId){
+ const employees=state.employees.filter(e=>e.enabled).sort((a,b)=>a.name.localeCompare(b.name));
+ if(!employees.length){alertUser('No enabled employees available');return}
+ const initial=employees.find(e=>e.id===selectedEmployeeId)?.id||employees[0].id;
+ const initialDate=state.today>=week&&state.today<=state.sunday?state.today:week;
+ pop('<h2>Add Employee PTO</h2><p class="muted">Create PTO on behalf of an employee. Approved PTO will be included in payroll totals for the applicable week.</p>'
+  +'<form id="adminPtoForm">'
+  +'<label class="label" for="adminPtoEmployee">Employee</label><select class="input" id="adminPtoEmployee">'+employees.map(e=>'<option value="'+safe(e.id)+'" '+(e.id===initial?'selected':'')+'>'+safe(e.name)+'</option>').join('')+'</select>'
+  +'<label class="label" for="adminPtoDate">Date</label><input class="input" type="date" id="adminPtoDate" value="'+safe(initialDate)+'" required>'
+  +'<label class="label" for="adminPtoHours">PTO hours</label><input class="input" type="number" id="adminPtoHours" min="0.25" max="24" step="0.25" value="8" required>'
+  +'<label class="label" for="adminPtoStatus">Status</label><select class="input" id="adminPtoStatus"><option value="APPROVED">Approved (include in payroll)</option><option value="PENDING">Pending (requires approval)</option></select>'
+  +'<p class="muted">Existing non-denied PTO on the same date cannot be duplicated. Changes are audit-logged.</p>'
+  +'<button class="btn red" style="width:100%" type="submit" id="adminPtoSave">Save PTO</button></form>');
+ $('adminPtoForm').onsubmit=async event=>{
+  event.preventDefault();
+  const button=$('adminPtoSave'),employeeId=$('adminPtoEmployee').value,date=$('adminPtoDate').value,
+        hours=Number($('adminPtoHours').value),status=$('adminPtoStatus').value;
+  const employee=employees.find(e=>e.id===employeeId);
+  if(!employee||!date||!Number.isFinite(hours)||hours<=0||hours>24||Math.round(hours*4)!==hours*4){alertUser('Enter a valid employee, date and quarter-hour amount');return}
+  if(!confirm('Add '+hours+' hours of '+status.toLowerCase()+' PTO for '+employee.name+' on '+displayDay(date)+'?'))return;
+  button.disabled=true;
+  try{
+   await api('pto-create',{employeeId,date,hours,status});
+   hide();
+   week=new Date(date+'T12:00:00Z').toISOString().slice(0,10);
+   const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);week=d.toISOString().slice(0,10);
+   await refresh();
+   alertUser('PTO added for '+employee.name);
+  }catch(err){alertUser(err.message);button.disabled=false}
+ };
+}
 function quickPunchEntry(employee){
  if(quickDraft){
   if(quickDraft.employeeId===employee.id&&quickDraft.week===week){restoreQuickDraft();return}
