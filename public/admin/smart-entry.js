@@ -35,11 +35,11 @@
   }
   function parse(text,eligible){
     const errors=[],warnings=[],days=[];
-    const source=String(text||'').trim();
+    const source=String(text||'').replace(/^[ \t]*(?:[-*•–—]|\d+[.)])[ \t]*(?=(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec|\d{1,2}\/\d{1,2})\b)/gim,'').trim();
     if(!source)return {days,errors:['Dictate or paste at least one dated entry.'],warnings};
     const found=[...source.matchAll(datePattern)];
     if(!found.length)return {days,errors:['Include a day or date before the times (for example, Monday October 26).'],warnings};
-    if(source.slice(0,found[0].index).trim().replace(/[,:;\s]/g,''))errors.push('Text before the first date could not be assigned to a workday.');
+    if(source.slice(0,found[0].index).trim().replace(/[\s,:;.\-–—•*]/g,''))errors.push('Text before the first date could not be assigned to a workday.');
     const seen=new Set();
     for(let i=0;i<found.length;i++){
       const label=found[i][0];
@@ -52,7 +52,7 @@
       if(!matches.length){errors.push(label+': no valid AM/PM times found.');continue;}
       let remainder=chunk;
       for(let j=matches.length-1;j>=0;j--)remainder=remainder.slice(0,matches[j].index)+remainder.slice(matches[j].index+matches[j][0].length);
-      remainder=remainder.replace(/\b(?:and|in|out|at|to|then|back|clock|from|on|the|punch|times)\b/gi,'').replace(/[\s,;:.\-–—]/g,'');
+      remainder=remainder.replace(/\b(?:and|in|out|at|to|then|back|clock|from|on|the|punch|times)\b/gi,'').replace(/[\s,;:.\-–—•*]/g,'');
       if(remainder)errors.push(label+': unrecognized text "'+remainder.slice(0,60)+'". Check for missing AM/PM or transcription errors.');
       const original=matches.map(m=>parseTime(m[0]));
       if(original.some(v=>v===null)){errors.push(label+': an invalid time was detected.');continue;}
