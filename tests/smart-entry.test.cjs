@@ -49,3 +49,27 @@ test('accepts ordinary bulleted and numbered dictated timecards',()=>{
     assert.deepEqual(Array.from(r.days,d=>d.date),['2026-10-26','2026-10-27']);
   }
 });
+
+
+test('accepts Wispr compact clock notation with no colon',()=>{
+  const input=[
+    '- October 26: 905 am, 802 pm',
+    '- October 27: 955 am, 828 pm',
+    '- October 28: 1005 am, 705 pm',
+    '- October 29: 915 am, 8:00 pm',
+    '- October 30: 1010 am, 7:11 pm'
+  ].join('\n');
+  const r=parse(input,week);
+  assert.deepEqual(Array.from(r.errors),[]);
+  assert.deepEqual(Array.from(r.days,d=>Array.from(d.punches,p=>p.label)),[
+    ['9:05 AM','8:02 PM'],
+    ['9:55 AM','8:28 PM'],
+    ['10:05 AM','7:05 PM'],
+    ['9:15 AM','8:00 PM'],
+    ['10:10 AM','7:11 PM']
+  ]);
+});
+test('rejects invalid compact times instead of guessing',()=>{
+  const r=parse('October 26: 1265 am, 805 pm',week);
+  assert.ok(r.errors.some(e=>e.includes('invalid time')));
+});
