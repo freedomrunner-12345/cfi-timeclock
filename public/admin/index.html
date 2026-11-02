@@ -122,7 +122,7 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .paychex-note{font-size:12px;color:#747780;line-height:1.5;margin:11px 1px 0!important}
 @media(max-width:650px){.paychex-card{padding:14px}.paychex-intro{flex-direction:column;gap:6px}.paychex-table td{padding:9px 10px}}
 
-</style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script>
+.smart-mode-buttons{display:flex;gap:8px;margin:14px 0}.smart-mode-buttons button{flex:1}.smart-mode-buttons button[aria-pressed="true"]{background:#b81025;color:#fff;border-color:#b81025}.smart-entry-panel textarea{min-height:142px;resize:vertical;width:100%;font:inherit;line-height:1.5}.smart-preview{margin:12px 0}.smart-preview-day{padding:10px 0;border-bottom:1px solid #e7e7e9}.smart-preview-pair{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0;font-variant-numeric:tabular-nums}.smart-preview-pair span{flex:1}.smart-entry-actions{display:flex;gap:8px}.smart-entry-actions button{flex:1}.smart-entry-warning{padding:10px;margin:8px 0;border-radius:8px;background:#fff3d8;color:#684400}.smart-entry-error{padding:10px;margin:8px 0;border-radius:8px;background:#ffebeb;color:#8c1325}</style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script src="/admin/smart-entry.js"></script><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
 async function api(path,body){const r=await fetch('/api/admin/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json().catch(()=>({error:'Connection unavailable'}));if(!r.ok)throw Error(data.error||'Request failed');return data}
@@ -312,8 +312,10 @@ function quickPunchEntry(employee){
  const eligible=employee.totals.days.map(d=>d.date).filter(d=>d<=state.today);
  pop('<h2>Quick Punch Entry</h2><p class="muted">'+safe(employee.name)+' · Week of '+displayDay(week)+'</p>'
   +'<p class="muted quick-help">Enter for next punch · Backspace on empty row to undo · Shift+Enter for next day. Times: 7:30 AM or 15:30.</p>'
-  +'<form id="quickForm"><div id="quickDays"></div><button type="button" class="btn outline quick-add-day" id="quickAddDay">+ Add Another Day</button>'
-  +'<p id="quickError" class="quick-error hidden" role="alert"></p><button class="btn red" id="quickSave" style="width:100%;margin-top:12px" type="submit">Save All Punches</button></form>');
+  +'<div class="smart-mode-buttons" role="group" aria-label="Punch entry mode"><button type="button" class="btn outline" id="quickManualMode" aria-pressed="true">Manual Entry</button><button type="button" class="btn outline" id="quickSmartMode" aria-pressed="false">Smart Entry</button></div>'
+   +'<div id="smartEntryPanel" class="smart-entry-panel hidden"><label class="label" for="smartTranscript">Dictate or paste dates and punch times</label><textarea class="input" id="smartTranscript" placeholder="Monday, October 26: 7:21 AM, 3:24 PM, 4:12 PM, 5:30 PM"></textarea><p class="muted">Use Wispr Flow here. Times may be out of order. Review the sorted punches before applying.</p><div class="smart-entry-actions"><button type="button" class="btn red" id="smartInterpret">Interpret Times</button></div><div id="smartPreview" class="smart-preview" aria-live="polite"></div><button type="button" class="btn red hidden" id="smartApply" style="width:100%">Use These Punches in Manual Review</button></div>'
+   +'<div id="manualEntryPanel"><form id="quickForm"><div id="quickDays"></div><button type="button" class="btn outline quick-add-day" id="quickAddDay">+ Add Another Day</button>'
+  +'<p id="quickError" class="quick-error hidden" role="alert"></p><button class="btn red" id="quickSave" style="width:100%;margin-top:12px" type="submit">Save All Punches</button></form></div>');
  quickDraft={node:$('overlay').firstElementChild,employeeId:employee.id,employeeName:employee.name,week};
  const modalTitle=quickDraft.node.querySelector('h2');
  modalTitle.classList.add('quick-heading');
@@ -399,6 +401,46 @@ function quickPunchEntry(employee){
  }
  if(!eligible.length){$('quickForm').innerHTML='<p>No past or current days in this payroll week.</p>';return}
  addDay(chosen);
+
+ const smartPanel=$('smartEntryPanel'),manualPanel=$('manualEntryPanel'),smartPreview=$('smartPreview'),smartApply=$('smartApply');
+ let interpreted=null;
+ function setMode(mode){
+  const smart=mode==='smart';
+  smartPanel.classList.toggle('hidden',!smart);manualPanel.classList.toggle('hidden',smart);
+  $('quickManualMode').setAttribute('aria-pressed',String(!smart));
+  $('quickSmartMode').setAttribute('aria-pressed',String(smart));
+  if(smart)$('smartTranscript').focus();
+ }
+ $('quickManualMode').onclick=()=>setMode('manual');
+ $('quickSmartMode').onclick=()=>setMode('smart');
+ $('smartTranscript').addEventListener('input',()=>{interpreted=null;smartApply.classList.add('hidden');smartPreview.innerHTML=''});
+ $('smartInterpret').onclick=()=>{
+  interpreted=window.CFISmartPunch.parse($('smartTranscript').value,eligible);
+  smartApply.classList.add('hidden');
+  const result=interpreted;
+  let output=result.errors.map(e=>'<div class="smart-entry-error">'+safe(e)+'</div>').join('');
+  output+=result.warnings.map(w=>'<div class="smart-entry-warning">'+safe(w)+'</div>').join('');
+  output+=result.days.map(day=>'<div class="smart-preview-day"><strong>'+displayDay(day.date)+'</strong>'+day.punches.filter((_,i)=>i%2===0).map((p,i)=>'<div class="smart-preview-pair"><span>IN · '+safe(p.label)+'</span><span>OUT · '+safe(day.punches[i*2+1].label)+'</span></div>').join('')+'</div>').join('');
+  smartPreview.innerHTML=output||'<p class="muted">No entries found.</p>';
+  if(!result.errors.length&&result.days.length)smartApply.classList.remove('hidden');
+ };
+ smartApply.onclick=()=>{
+  if(!interpreted||interpreted.errors.length||!interpreted.days.length)return;
+  const hasManual=[...container.querySelectorAll('.quick-time')].some(i=>i.value.trim());
+  if(hasManual&&!confirm('Replace the current unsaved manual entries with these interpreted punches?'))return;
+  container.innerHTML='';
+  for(const day of interpreted.days){
+   addDay(day.date);
+   const block=[...container.children].find(b=>b.querySelector('.quick-day-select').value===day.date);
+   if(!block){alertUser('Unable to add '+day.date);return}
+   const rows=block.querySelector('.quick-day-rows');
+   while(rows.children.length<day.punches.length)block.querySelector('.quick-add-line').click();
+   const inputs=[...rows.querySelectorAll('.quick-time')];
+   day.punches.forEach((p,i)=>inputs[i].value=p.label);
+  }
+  updateAddButton();setMode('manual');$('quickError').classList.add('hidden');
+  alertUser('Punches transferred for review. Verify each day, then Save All Punches.');
+ };
  $('quickAddDay').onclick=()=>addDay();
  $('quickForm').onsubmit=async event=>{
   event.preventDefault();

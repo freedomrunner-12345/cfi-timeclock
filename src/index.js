@@ -83,7 +83,7 @@ function compute(punches, monday, today) {
         issues.push('Unrecognized punch type.');
       }
     }
-    if (openIn !== null) issues.push('Clock In has no matching Clock Out.');
+    if (openIn !== null && day < today) issues.push('Missing Clock Out — employee clocked in but did not clock out that day.');
     // Display and retain safe completed intervals, but never present
     // conflicting or incomplete days as finalized payroll.
     const lunchCredit = pairedBreaks ? 30 : 0;
@@ -178,14 +178,15 @@ export class Timeclock {
         const requests = this.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date', user.id, monday, sunday);
         const last = this.one('SELECT id,kind,at FROM punches WHERE user_id=? ORDER BY at DESC LIMIT 1', user.id);
         const worked = totals.workedHours;
-        return json({ user: { id: user.id, name: user.name, preferredName: user.preferred_name || '' }, monday, sunday, today, punches, totals, requests, isClockedIn: last?.kind === 'IN', lastPunch: last, ptoHours: requests.filter(r => r.status === 'APPROVED').reduce((v,r) => v + r.hours, 0), worked });
+        return json({ user: { id: user.id, name: user.name, preferredName: user.preferred_name || '' }, monday, sunday, today, punches, totals, requests, isClockedIn: last?.kind === 'IN' && localDate(last.at) === today, lastPunch: last && localDate(last.at) === today ? last : null, ptoHours: requests.filter(r => r.status === 'APPROVED').reduce((v,r) => v + r.hours, 0), worked });
       }
       if (route === '/api/punch' && req.method === 'POST') {
         const data = await req.json();
         const kind = data.kind;
         if (kind !== 'IN' && kind !== 'OUT') return fail('Invalid action');
         const last = this.one('SELECT kind,at FROM punches WHERE user_id=? ORDER BY at DESC LIMIT 1', user.id);
-        if ((last?.kind === 'IN') === (kind === 'IN')) return fail(kind === 'IN' ? 'Already clocked in' : 'Already clocked out', 409);
+        const currentDayLast = last && localDate(last.at) === today ? last : null;
+        if ((currentDayLast?.kind === 'IN') === (kind === 'IN')) return fail(kind === 'IN' ? 'Already clocked in' : 'Already clocked out', 409);
         if (last && Date.now() - new Date(last.at).getTime() < 5000) return fail('Please wait a moment between punches', 409);
         const now = new Date().toISOString();
         const id = uid();
