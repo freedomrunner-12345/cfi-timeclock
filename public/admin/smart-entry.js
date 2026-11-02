@@ -5,18 +5,22 @@
   const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
   const monthPattern=months.map(m=>m+'|'+m.slice(0,3)).join('|');
   const datePattern=new RegExp('\\b(?:(?:'+weekdays.join('|')+')(?:\\s*,?\\s*(?:(?:'+monthPattern+')\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?|\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?))?|(?:'+monthPattern+')\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?|\\d{1,2}\\/\\d{1,2}(?:\\/\\d{2,4})?)\\b','gi');
-  const timePattern=/\b(?:1[0-2]|0?[1-9])(?:\s*:\s*[0-5]\d)?\s*(?:a\.?m\.?|p\.?m\.?)|\b(?:noon|midnight)\b/gi;
+  const timePattern=/\b(?:\d{1,2}\s*:\s*\d{2}|\d{1,4})\s*(?:a\.?m\.?|p\.?m\.?)|\b(?:noon|midnight)\b/gi;
   const dayName=iso=>weekdays[new Date(iso+'T12:00:00Z').getUTCDay()];
   const format=n=>(Math.floor(n/60)%12||12)+':'+String(n%60).padStart(2,'0')+' '+(n>=720?'PM':'AM');
   function parseTime(raw){
     const v=raw.toLowerCase().replace(/[.\s]/g,'');
     if(v==='noon')return 720;
     if(v==='midnight')return 0;
-    const m=v.match(/^(\d{1,2})(?::(\d{2}))?(am|pm)$/);
+    const m=v.match(/^(\d{1,2}:\d{2}|\d{1,4})(am|pm)$/);
     if(!m)return null;
-    const h=Number(m[1]),min=Number(m[2]||0);
+    const digits=m[1],suffix=m[2];
+    // Read 905 as 9:05, 1005 as 10:05, 8 as 8:00.
+    // Never guess when the implied minutes or hour are invalid.
+    const parts=digits.includes(':')?digits.split(':'):digits.length>=3?[digits.slice(0,-2),digits.slice(-2)]:[digits,'0'];
+    const h=Number(parts[0]),min=Number(parts[1]);
     if(h<1||h>12||min>59)return null;
-    return (h%12+(m[3]==='pm'?12:0))*60+min;
+    return (h%12+(suffix==='pm'?12:0))*60+min;
   }
   function resolveDate(label,eligible){
     const l=label.toLowerCase().replace(/\b(\d+)(st|nd|rd|th)\b/g,'$1').replace(/,/g,' ').replace(/\s+/g,' ').trim();
