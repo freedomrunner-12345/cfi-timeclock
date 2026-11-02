@@ -306,8 +306,8 @@ function showCard(e){
 }
 
 function addAdminPto(selectedEmployeeId){
- const employees=state.employees.filter(e=>e.enabled).sort((a,b)=>a.name.localeCompare(b.name));
- if(!employees.length){alertUser('No enabled employees available');return}
+ const employees=[...state.employees].sort((a,b)=>a.name.localeCompare(b.name));
+ if(!employees.length){alertUser('No employees available');return}
  const initial=employees.find(e=>e.id===selectedEmployeeId)?.id||employees[0].id;
  const initialDate=state.today>=week&&state.today<=state.sunday?state.today:week;
  pop('<h2>Add Employee PTO</h2><p class="muted">Create PTO on behalf of an employee. Approved PTO will be included in payroll totals for the applicable week.</p>'
