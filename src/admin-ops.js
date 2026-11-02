@@ -106,6 +106,20 @@ export async function adminOps(store,request){
   store.audit('employee-status',{employeeId,enabled:!!enabled},'admin');
   return result({ok:true});
  }
+ if(route==='/api/admin/pto-create'&&method==='POST'){
+  const data=await request.json();
+  const employeeId=String(data.employeeId??'').trim(),date=String(data.date??''),hours=Number(data.hours);
+  const status=data.status==='PENDING'?'PENDING':data.status==='APPROVED'?'APPROVED':null;
+  if(!/^\d{1,12}$/.test(employeeId)||!store.one('SELECT id FROM users WHERE id=? AND is_archived=0',employeeId))return error('Choose an active employee',404);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||new Date(date+'T12:00:00Z').toISOString().slice(0,10)!==date)return error('Enter a valid PTO date');
+  if(!Number.isFinite(hours)||hours<=0||hours>24||Math.round(hours*4)!==hours*4)return error('PTO hours must be in 0.25-hour increments, up to 24 hours');
+  if(!status)return error('Choose Pending or Approved');
+  if(store.one("SELECT id FROM pto WHERE user_id=? AND date=? AND status!='DENIED'",employeeId,date))return error('An active PTO request already exists for this employee on that date',409);
+  const requestId=id(),now=new Date().toISOString();
+  store.db.exec('INSERT INTO pto (id,user_id,date,hours,status,created_at,reviewed_at) VALUES (?,?,?,?,?,?,?)',requestId,employeeId,date,hours,status,now,status==='APPROVED'?now:null);
+  store.audit('admin-pto-created',{requestId,employeeId,date,hours,status},'admin');
+  return result({ok:true,id:requestId,date,hours,status});
+ }
  if(route==='/api/admin/pto-review'&&method==='POST'){
   const data=await request.json(),status=String(data.status||''),requestId=String(data.id||'');
   if(!['APPROVED','DENIED','PENDING'].includes(status))return error('Unknown PTO status');
