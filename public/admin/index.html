@@ -127,7 +127,7 @@ const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k
 let state=null,week=null,tab='overview',quickDraft=null;
 async function api(path,body){const r=await fetch('/api/admin/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json().catch(()=>({error:'Connection unavailable'}));if(!r.ok)throw Error(data.error||'Request failed');return data}
 function alertUser(m){$('toast').textContent=m;$('toast').classList.remove('hidden');clearTimeout(alertUser.t);alertUser.t=setTimeout(()=>$('toast').classList.add('hidden'),3800)}
-function pop(html){$('overlay').innerHTML='<div class="modal">'+html+'<div class="sep"></div><button id="cancel" class="btn outline">Close</button></div>';$('overlay').classList.remove('hidden');$('overlay').onclick=e=>{if(e.target===$('overlay'))hide()};$('cancel').onclick=hide}
+function pop(html){$('overlay').innerHTML='<div class="modal">'+html+'<div class="sep"></div><button id="cancel" class="btn outline">Close</button></div>';$('overlay').classList.remove('hidden');$('overlay').onclick=e=>{if(e.target===$('overlay')&&!quickDraft)hide()};$('cancel').onclick=hide}
 function updateQuickDock(){
  let dock=$('quickDraftDock');
  if(!quickDraft){if(dock)dock.remove();return}
@@ -147,7 +147,7 @@ function restoreQuickDraft(){
  const overlay=$('overlay');
  overlay.replaceChildren(quickDraft.node);
  overlay.classList.remove('hidden');
- overlay.onclick=e=>{if(e.target===overlay)hide()};
+ overlay.onclick=e=>{if(e.target===overlay&&!quickDraft)hide()};
  const dock=$('quickDraftDock');if(dock)dock.remove();
 }
 function hide(){
@@ -313,7 +313,7 @@ function quickPunchEntry(employee){
  pop('<h2>Quick Punch Entry</h2><p class="muted">'+safe(employee.name)+' · Week of '+displayDay(week)+'</p>'
   +'<p class="muted quick-help">Enter for next punch · Backspace on empty row to undo · Shift+Enter for next day. Times: 7:30 AM or 15:30.</p>'
   +'<div class="smart-mode-buttons" role="group" aria-label="Punch entry mode"><button type="button" class="btn outline" id="quickManualMode" aria-pressed="true">Manual Entry</button><button type="button" class="btn outline" id="quickSmartMode" aria-pressed="false">Smart Entry</button></div>'
-   +'<div id="smartEntryPanel" class="smart-entry-panel hidden"><label class="label" for="smartTranscript">Dictate or paste dates and punch times</label><textarea class="input" id="smartTranscript" placeholder="Monday, October 26: 7:21 AM, 3:24 PM, 4:12 PM, 5:30 PM"></textarea><p class="muted">Use Wispr Flow here. Times may be out of order. Review the sorted punches before applying.</p><div class="smart-entry-actions"><button type="button" class="btn red" id="smartInterpret">Interpret Times</button></div><div id="smartPreview" class="smart-preview" aria-live="polite"></div><button type="button" class="btn red hidden" id="smartApply" style="width:100%">Use These Punches in Manual Review</button></div>'
+   +'<div id="smartEntryPanel" class="smart-entry-panel hidden"><label class="label" for="smartTranscript">Dictate or paste dates and punch times</label><textarea class="input" id="smartTranscript" placeholder="Monday, October 26: 7:21 AM, 3:24 PM, 4:12 PM, 5:30 PM"></textarea><p class="muted">Use Wispr Flow here. Times may be out of order. Interpret Times fills the normal IN/OUT form to review and save.</p><div class="smart-entry-actions"><button type="button" class="btn red" id="smartInterpret">Interpret Times</button></div><div id="smartPreview" class="smart-preview" aria-live="polite"></div><button type="button" class="btn red hidden" id="smartApply" style="width:100%">Open Interpreted Punches</button></div>'
    +'<div id="manualEntryPanel"><form id="quickForm"><div id="quickDays"></div><button type="button" class="btn outline quick-add-day" id="quickAddDay">+ Add Another Day</button>'
   +'<p id="quickError" class="quick-error hidden" role="alert"></p><button class="btn red" id="quickSave" style="width:100%;margin-top:12px" type="submit">Save All Punches</button></form></div>');
  quickDraft={node:$('overlay').firstElementChild,employeeId:employee.id,employeeName:employee.name,week};
@@ -403,17 +403,25 @@ function quickPunchEntry(employee){
  addDay(chosen);
 
  const smartPanel=$('smartEntryPanel'),manualPanel=$('manualEntryPanel'),smartPreview=$('smartPreview'),smartApply=$('smartApply');
+ const transcript=$('smartTranscript'),draftKey='cfi-smart-draft:'+employee.id+':'+week;
+ const persistTranscript=()=>{try{if(transcript.value.trim())sessionStorage.setItem(draftKey,transcript.value);else sessionStorage.removeItem(draftKey)}catch(_){}};
+ try{const saved=sessionStorage.getItem(draftKey);if(saved){transcript.value=saved;setTimeout(()=>setMode('smart'),0)}}catch(_){}
+ $('cancel').onclick=()=>{
+  const edited=[...container.querySelectorAll('.quick-time')].some(i=>i.value.trim());
+  if((transcript.value.trim()||edited)&&!confirm('Close Quick Punch Entry? Dictated text will be retained in this browser session, but unsaved punches will not be submitted.'))return;
+  persistTranscript();hide();
+ };
  let interpreted=null;
  function setMode(mode){
   const smart=mode==='smart';
   smartPanel.classList.toggle('hidden',!smart);manualPanel.classList.toggle('hidden',smart);
   $('quickManualMode').setAttribute('aria-pressed',String(!smart));
   $('quickSmartMode').setAttribute('aria-pressed',String(smart));
-  if(smart)$('smartTranscript').focus();
+  if(smart)transcript.focus();
  }
  $('quickManualMode').onclick=()=>setMode('manual');
  $('quickSmartMode').onclick=()=>setMode('smart');
- $('smartTranscript').addEventListener('input',()=>{interpreted=null;smartApply.classList.add('hidden');smartPreview.innerHTML=''});
+ transcript.addEventListener('input',()=>{persistTranscript();interpreted=null;smartApply.classList.add('hidden');smartPreview.innerHTML=''});
  $('smartInterpret').onclick=()=>{
   interpreted=window.CFISmartPunch.parse($('smartTranscript').value,eligible);
   smartApply.classList.add('hidden');
@@ -422,12 +430,15 @@ function quickPunchEntry(employee){
   output+=result.warnings.map(w=>'<div class="smart-entry-warning">'+safe(w)+'</div>').join('');
   output+=result.days.map(day=>'<div class="smart-preview-day"><strong>'+displayDay(day.date)+'</strong>'+day.punches.filter((_,i)=>i%2===0).map((p,i)=>'<div class="smart-preview-pair"><span>IN · '+safe(p.label)+'</span><span>OUT · '+safe(day.punches[i*2+1].label)+'</span></div>').join('')+'</div>').join('');
   smartPreview.innerHTML=output||'<p class="muted">No entries found.</p>';
-  if(!result.errors.length&&result.days.length)smartApply.classList.remove('hidden');
+  if(!result.errors.length&&result.days.length){
+   smartApply.classList.remove('hidden');
+   populateInterpretedPunches();
+  }
  };
- smartApply.onclick=()=>{
+ function populateInterpretedPunches(){
   if(!interpreted||interpreted.errors.length||!interpreted.days.length)return;
   const hasManual=[...container.querySelectorAll('.quick-time')].some(i=>i.value.trim());
-  if(hasManual&&!confirm('Replace the current unsaved manual entries with these interpreted punches?'))return;
+  if(hasManual&&!confirm('Replace unsaved manual punches with the interpreted times? Your dictation will remain available.'))return;
   container.innerHTML='';
   for(const day of interpreted.days){
    addDay(day.date);
@@ -439,8 +450,9 @@ function quickPunchEntry(employee){
    day.punches.forEach((p,i)=>inputs[i].value=p.label);
   }
   updateAddButton();setMode('manual');$('quickError').classList.add('hidden');
-  alertUser('Punches transferred for review. Verify each day, then Save All Punches.');
- };
+  alertUser('Times sorted into the regular IN/OUT form. Review and click Save All Punches.');
+ }
+ smartApply.onclick=populateInterpretedPunches;
  $('quickAddDay').onclick=()=>addDay();
  $('quickForm').onsubmit=async event=>{
   event.preventDefault();
@@ -470,7 +482,7 @@ function quickPunchEntry(employee){
   const button=$('quickSave');button.disabled=true;button.textContent='Saving…';
   try{
    const result=await api('punch-batch?week='+encodeURIComponent(week),{employeeId:employee.id,days});
-   hide();await refresh();alertUser(result.added+' punches saved across '+result.days+' days');
+   try{sessionStorage.removeItem(draftKey)}catch(_){}hide();await refresh();alertUser(result.added+' punches saved across '+result.days+' days');
   }catch(e){fail(e.message);button.disabled=false;button.textContent='Save All Punches'}
  };
 }
