@@ -3,6 +3,12 @@ const error=(message,status=400)=>result({error:message},status);
 const id=()=>crypto.randomUUID();
 const csvCell=value=>'"'+String(value??'').replaceAll('"','""').replace(/^([=+@-])/,"'$1")+'"';
 const validStamp=(value)=>{const d=new Date(value);return Number.isFinite(d.getTime())&&d.getTime()<=Date.now()?d:null;};
+const validBirthDate=value=>{
+ if(value==='')return true;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const date=new Date(value+'T12:00:00Z');
+ return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value&&date.getTime()<=Date.now()&&Number(value.slice(0,4))>=1900;
+};
 const punchesFor=(store,emp,week)=>store.all('SELECT id,kind,at,corrected_at FROM punches WHERE user_id=? ORDER BY at',emp).filter(x=>store.week(store.date(x.at))===week);
 export async function adminOps(store,request){
  const url=new URL(request.url),route=url.pathname,method=request.method;
@@ -17,14 +23,14 @@ export async function adminOps(store,request){
   store.db.exec('INSERT INTO app_migrations(key) VALUES (?)','salary-initial-v1');
  }
  if(route==='/api/admin/state'&&method==='GET'){
-  const users=store.all('SELECT id,name,preferred_name,pay_type FROM users WHERE is_archived=0 ORDER BY name COLLATE NOCASE');
+  const users=store.all('SELECT id,name,preferred_name,pay_type,birth_date FROM users WHERE is_archived=0 ORDER BY name COLLATE NOCASE');
   const employeeData=users.map(u=>{
    const flag=store.one('SELECT enabled FROM employee_controls WHERE id=?',u.id);
    const punches=punchesFor(store,u.id,week);
    const totals=store.calculate(punches,week,today);
    const requests=store.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date',u.id,week,sunday);
    const approvedPto=requests.filter(p=>p.status==='APPROVED').reduce((sum,p)=>sum+p.hours,0);
-   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',enabled:flag?.enabled!==0,payType:u.pay_type==='SALARY'?'SALARY':'HOURLY',totals,requests,approvedPto,punches};
+   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',birthDate:u.birth_date||'',enabled:flag?.enabled!==0,payType:u.pay_type==='SALARY'?'SALARY':'HOURLY',totals,requests,approvedPto,punches};
   });
   return result({week,sunday,today,employees:employeeData});
  }
@@ -59,6 +65,22 @@ export async function adminOps(store,request){
   store.db.exec('INSERT INTO users (id,name,salt,pin_hash,created_at) VALUES (?,?,?,?,?)',employeeId,name,'','',new Date().toISOString());
   store.db.exec('INSERT OR REPLACE INTO employee_controls(id,enabled) VALUES (?,?)',employeeId,1);
   store.audit('employee-added',{employeeId,name},'admin');
+  return result({ok:true});
+ }
+ if(route==='/api/admin/employee-birthdate'&&method==='POST'){
+  const data=await request.json();
+  const employeeId=String(data.id??'').trim();
+  const birthDate=String(data.birthDate??'').trim();
+  if(!/^\d{1,12}$/.test(employeeId))return error('Invalid employee ID');
+  if(!validBirthDate(birthDate))return error('Enter a valid birthdate, or clear it to disable birthdate sign-in');
+  const employee=store.one('SELECT id FROM users WHERE id=? AND is_archived=0',employeeId);
+  if(!employee)return error('Employee not found',404);
+  if(birthDate){
+   const duplicate=store.one('SELECT id FROM users WHERE birth_date=? AND id!=? AND is_archived=0 LIMIT 1',birthDate,employeeId);
+   if(duplicate)return error('Another employee already has this birthdate. Birthdate-only sign-in requires a unique date; please use Paychex IDs for employees who share one.',409);
+  }
+  store.db.exec('UPDATE users SET birth_date=? WHERE id=?',birthDate,employeeId);
+  store.audit('employee-birthdate-updated',{employeeId,configured:!!birthDate},'admin');
   return result({ok:true});
  }
  if(route==='/api/admin/employee-pay-type'&&method==='POST'){
