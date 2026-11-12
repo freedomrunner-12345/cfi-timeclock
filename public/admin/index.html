@@ -199,7 +199,7 @@ function drawContent(){const c=$('content');if(tab==='paychex'){drawPaychexEntry
  c.innerHTML='<details class="card employee-form-details"><summary>Import employee roster</summary><p class="muted">Import a roster file (.tsv).</p><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></details>'
  +'<details class="card employee-form-details"><summary>Add employee</summary><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></details>'
  +'<div class="card employee-directory"><h2>Employees <span class="employee-count">'+people.length+'</span></h2><p class="muted">Remove hides employees from the active roster but preserves historical payroll records.</p>'
- +people.map(e=>'<div class="employee compact-employee'+(e.payType==='SALARY'?' is-salary':'')+'"><div class="employee-info"><div class="name">'+safe(e.name)+(e.payType==='SALARY'?' <span class="salary-label">SALARY</span>':'')+'</div><div class="sub">ID '+safe(e.id)+' · Display: '+safe(e.preferredName||(e.name.includes(',')?e.name.split(',')[1].trim().split(/\s+/)[0]:e.name.split(/\s+/)[0]))+'</div></div><div class="row employee-actions"><select class="employee-pay-select" data-pay-type="'+safe(e.id)+'" aria-label="Pay type for '+safe(e.name)+'"><option value="HOURLY" '+(e.payType==='SALARY'?'':'selected')+'>Hourly</option><option value="SALARY" '+(e.payType==='SALARY'?'selected':'')+'>Salary</option></select><span class="tag '+(e.enabled?'':'off')+'">'+(e.enabled?'Active':'Disabled')+'</span><button class="btn outline" data-preferred="'+safe(e.id)+'">Name</button><button class="btn outline" data-toggle="'+safe(e.id)+'">'+(e.enabled?'Disable':'Enable')+'</button><button class="btn outline employee-delete" data-delete-employee="'+safe(e.id)+'">Delete</button></div></div>').join('')+'</div>';
+ +people.map(e=>'<div class="employee compact-employee'+(e.payType==='SALARY'?' is-salary':'')+'"><div class="employee-info"><div class="name">'+safe(e.name)+(e.payType==='SALARY'?' <span class="salary-label">SALARY</span>':'')+'</div><div class="sub">ID '+safe(e.id)+' · Display: '+safe(e.preferredName||(e.name.includes(',')?e.name.split(',')[1].trim().split(/\s+/)[0]:e.name.split(/\s+/)[0]))+'</div></div><div class="row employee-actions"><select class="employee-pay-select" data-pay-type="'+safe(e.id)+'" aria-label="Pay type for '+safe(e.name)+'"><option value="HOURLY" '+(e.payType==='SALARY'?'':'selected')+'>Hourly</option><option value="SALARY" '+(e.payType==='SALARY'?'selected':'')+'>Salary</option></select><span class="tag '+(e.enabled?'':'off')+'">'+(e.enabled?'Active':'Disabled')+'</span><button class="btn outline" data-preferred="'+safe(e.id)+'">Name</button><button class="btn outline" data-birthdate="'+safe(e.id)+'">Birthdate'+(e.birthDate?' ✓':'')+'</button><button class="btn outline" data-toggle="'+safe(e.id)+'">'+(e.enabled?'Disable':'Enable')+'</button><button class="btn outline employee-delete" data-delete-employee="'+safe(e.id)+'">Delete</button></div></div>').join('')+'</div>';
 c.querySelector('#importroster').onclick=async()=>{
  const file=c.querySelector('#rosterfile').files?.[0];
  if(!file){alertUser('Select the employee roster file first');return}
@@ -219,6 +219,9 @@ c.querySelector('#importroster').onclick=async()=>{
 };c.querySelector('#add').onsubmit=async ev=>{ev.preventDefault();const d=Object.fromEntries(new FormData(ev.target).entries());try{await api('employee',d);await refresh();alertUser('Employee added')}catch(e){alertUser(e.message)}};c.querySelectorAll('[data-preferred]').forEach(b=>b.onclick=()=>{
  const employee=state.employees.find(e=>e.id===b.dataset.preferred);
  if(employee)editPreferredName(employee);
+});c.querySelectorAll('[data-birthdate]').forEach(button=>button.onclick=()=>{
+ const employee=state.employees.find(e=>e.id===button.dataset.birthdate);
+ if(employee)editBirthdate(employee);
 });c.querySelectorAll('[data-pay-type]').forEach(select=>select.onchange=async()=>{
  const employee=state.employees.find(e=>e.id===select.dataset.payType);
  if(!employee)return;
@@ -268,6 +271,19 @@ c.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showCard(state.employ
 $('export').onclick=async()=>{try{const r=await fetch('/api/admin/export?week='+week,{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('Export unavailable');const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='cfi-payroll-'+week+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(e){alertUser(e.message)}}
 }
 
+function editBirthdate(employee){
+ pop('<h2>Employee Birthdate</h2><p class="muted">'+safe(employee.name)+'</p><p class="muted">Employees can sign in using either their Paychex ID or their birthdate (MM/DD/YYYY). Birthdate sign-in only works when no other active employee has the same date.</p><form id="birthdateForm"><label class="label" for="birthdateInput">Date of Birth</label><input class="input" id="birthdateInput" type="date" autocomplete="off"><button class="btn red" type="submit">Save Birthdate</button></form><div class="info">Clear the date and save to disable birthdate sign-in. Birthdates are visible only to signed-in administrators.</div>');
+ $('birthdateInput').value=employee.birthDate||'';
+ $('birthdateForm').onsubmit=async event=>{
+  event.preventDefault();
+  const button=event.currentTarget.querySelector('button');
+  button.disabled=true;
+  try{
+   await api('employee-birthdate',{id:employee.id,birthDate:$('birthdateInput').value});
+   hide();await refresh();alertUser('Birthdate saved');
+  }catch(err){alertUser(err.message);button.disabled=false;}
+ };
+}
 function editPreferredName(employee){
  pop('<h2>Preferred Name</h2><p class="muted">Employee: '+safe(employee.name)+'</p><p class="muted">Use the name this employee prefers to see when signing in and clocking in. Their Paychex name remains unchanged for payroll.</p><form id="preferredForm"><label class="label" for="preferredInput">Preferred Name</label><input class="input" id="preferredInput" type="text" maxlength="60" autocomplete="off" placeholder="Example: Mike"><button class="btn red" type="submit">Save Preferred Name</button></form><div class="info">Leave this field blank to use the first name from Paychex.</div>');
  $('preferredInput').value=employee.preferredName||'';
