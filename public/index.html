@@ -363,6 +363,18 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 .birthdate-field.selected{border-color:#b81025;box-shadow:0 0 0 2px #b8102520;background:#fff9fa}
 .birthdate-field:focus-visible{outline:3px solid #b81025;outline-offset:2px}
 .birthdate-divider{font-size:23px;color:#b3b5bd;font-weight:600}
+/* Low profile sunrise-style punch arc, with labels kept legible. */
+.birthdate-year-tip{margin:-4px 0 10px;color:#777b85;font-size:13px;text-align:center}
+.punch-timeline-scroll{width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.punch-timeline{position:relative;height:125px;min-width:100%;margin:0 auto}
+.punch-arc{position:absolute;inset:0;width:100%;height:100px;overflow:visible}
+.timeline-marker{position:absolute;z-index:1;transform:translate(-50%,-50%)}
+.timeline-dot{display:block;width:14px;height:14px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #c8cbd3;background:#aeb3bd}
+.timeline-dot.in{background:#29ad77}
+.timeline-label{position:absolute;top:80px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap;line-height:1.2}
+.timeline-kind{font-size:13px;color:#858791;font-weight:600}
+.timeline-label strong{font-size:clamp(13px,3.25vw,17px);font-weight:750;color:#333640;font-variant-numeric:tabular-nums}
+@media(max-width:380px){.timeline-label strong{font-size:12px}.punch-timeline{height:118px}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -530,7 +542,7 @@ function signin(){
   +'<form id="login" autocomplete="off"><label class="field visually-hidden" for="id">Paychex Employee ID</label>'
   +'<input type="hidden" name="id" id="id">'
   +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
-  +'<div id="birthdateFields" class="birthdate-fields hidden" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YY or YYYY</span></button></div>'
+  +'<div id="birthdateFields" class="birthdate-fields hidden" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YYYY</span></button></div><p id="yearTip" class="birthdate-year-tip hidden">2-digit year works too</p>'
   +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
   +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button>';
  wireQuestions();
@@ -571,6 +583,7 @@ function signin(){
   });
   display.classList.toggle('hidden',signinMethod==='birthdate');
   birthFields.classList.toggle('hidden',signinMethod!=='birthdate');
+  $('yearTip').classList.toggle('hidden',signinMethod!=='birthdate');
   renderKeypad();
   resetKeypadIdle();
  });
@@ -578,7 +591,7 @@ function signin(){
   if(signinMethod==='birthdate'){
    for(const part of parts){
     const b=birthFields.querySelector('[data-part="'+part+'"] .field-digits');
-    b.textContent=dob[part]||(part==='month'?'MM':part==='day'?'DD':'YY or YYYY');
+    b.textContent=dob[part]||(part==='month'?'MM':part==='day'?'DD':'YYYY');
    }
    submit.disabled=!normalizedBirthdate();
   }else{
@@ -647,14 +660,22 @@ function render(){
  const s=state,first=escapeHTML((s.user.preferredName||firstName(s.user.name))),on=s.isClockedIn;
  const entries=punchesToday(s);
  const last=entries.length?entries[entries.length-1]:null;
- const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'In':'Out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
+ const count=entries.length;
+ const timeline=count?'<div class="punch-timeline-scroll"><div class="punch-timeline" style="width:'+Math.max(100,count*25)+'%">'
+  +'<svg class="punch-arc" viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true"><path d="M 48 66 Q 300 0 552 66" fill="none" stroke="#c8cbd3" stroke-width="2.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>'
+  +entries.map((p,i)=>{
+    const t=count===1?0.5:i/(count-1),left=8+84*t,top=66-132*t*(1-t);
+    return '<div class="timeline-marker" style="left:'+left+'%;top:'+top+'px"><span class="timeline-dot '+(p.kind==='IN'?'in':'out')+'"></span></div>'
+     +'<div class="timeline-label" style="left:'+left+'%"><span class="timeline-kind">'+(p.kind==='IN'?'In':'Out')+'</span><strong>'+fmt(p.at)+'</strong></div>';
+   }).join('')+'</div></div>':'';
+ const accessiblePunches=entries.map(p=>'<li>'+(p.kind==='IN'?'In':'Out')+' at '+fmt(p.at)+'</li>').join('');
  $('app').innerHTML='<div class="clock-home">'
   +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1><div class="employee-id-hint">Your Paychex Employee ID: <strong>'+escapeHTML(s.user.id)+'</strong></div></header>'
   +'<section class="primary-zone" aria-label="Clock Status"><div class="status-line"><span class="entry-dot '+(on?'':'out')+'"></span>'+(on?'Currently Clocked In':'Currently Clocked Out')+'</div>'
   +'<button class="main-clock-button" id="punch" type="button"><span class="clock-arrow" aria-hidden="true">'+(on?'↑':'↓')+'</span>Clock '+(on?'Out':'In')+'</button>'
   +(last?'<div class="last-punch">Last '+(last.kind==='IN'?'In':'Out')+' · '+fmt(last.at)+'</div>':'')+'</section>'
   +'<section class="daily-section" aria-label="Today’s Punches"><h2 class="quiet-heading">Today’s Punches</h2>'
-  +(list?'<div class="compact-punches">'+list+'</div>':'<div class="empty">No Punches Yet</div>')+'</section>'
+  +(count?timeline+'<ul class="visually-hidden" aria-label="Punch times">'+accessiblePunches+'</ul>':'<div class="empty">No Punches Yet</div>')+'</section>'
   +'<div class="option-actions" aria-label="More Actions">'
   +'<button class="option-button" id="pto" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg><span>Request Time Off</span></button>'
   +'<button class="option-button" id="history" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>My Timecard</span></button>'
