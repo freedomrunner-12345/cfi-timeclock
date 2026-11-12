@@ -348,15 +348,21 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 .signin-refresh:active{background:#e8e9ee}
 .signin-refresh:focus-visible{outline:3px solid #b81025;outline-offset:2px}
 .signin-refresh svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.apk-download{display:flex;align-items:center;justify-content:center;width:max-content;max-width:100%;margin:8px auto 0;padding:10px 14px;border:1px solid #e4c8cf;border-radius:9px;background:#fff8fa;color:#b81025;font-size:14px;font-weight:700;text-align:center;text-decoration:none;touch-action:manipulation}
-.apk-download.hidden{display:none!important}
 /* Compact alternative sign-in method selector */
 .signin-methods{display:flex;gap:5px;margin:-4px 0 14px;padding:4px;border-radius:11px;background:#e9eaf0}
 .signin-method{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:#5d616c;font-size:15px;font-weight:650;cursor:pointer}
 .signin-method.active{background:#fff;color:#b81025;box-shadow:0 1px 5px #15182320}
 .signin-method:focus-visible{outline:3px solid #b81025;outline-offset:2px}
-.employee-id-hint{margin:9px 0 0;color:#777b85;font-size:14px;font-weight:500;letter-spacing:0}
-.employee-id-hint strong{font-weight:750;color:#393d47;font-variant-numeric:tabular-nums}
+.employee-id-hint{margin:12px 0 0;color:#585d68;font-size:clamp(17px,4.2vw,20px);font-weight:600;letter-spacing:-.015em}
+.employee-id-hint strong{font-weight:800;color:#252831;font-size:1.15em;font-variant-numeric:tabular-nums}
+.birthdate-fields{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.birthdate-field{flex:1;min-width:0;min-height:63px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#fff;border:1.5px solid #d6d7df;border-radius:12px;color:#22252d;cursor:pointer;touch-action:manipulation}
+.birthdate-field[data-part="year"]{flex:1.5}
+.birthdate-field .field-caption{font-size:11px;font-weight:700;color:#777b84}
+.birthdate-field .field-digits{font-size:clamp(22px,5vw,29px);font-weight:750;font-variant-numeric:tabular-nums;line-height:1.1}
+.birthdate-field.selected{border-color:#b81025;box-shadow:0 0 0 2px #b8102520;background:#fff9fa}
+.birthdate-field:focus-visible{outline:3px solid #b81025;outline-offset:2px}
+.birthdate-divider{font-size:23px;color:#b3b5bd;font-weight:600}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -524,65 +530,94 @@ function signin(){
   +'<form id="login" autocomplete="off"><label class="field visually-hidden" for="id">Paychex Employee ID</label>'
   +'<input type="hidden" name="id" id="id">'
   +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
+  +'<div id="birthdateFields" class="birthdate-fields hidden" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YY or YYYY</span></button></div>'
   +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
-  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button><a id="androidApkDownload" class="apk-download" href="https://raw.githubusercontent.com/freedomrunner-12345/cfi-timeclock/main/public/downloads/cfi-timeclock.apk">Download CFI Time Clock for Android</a>';
+  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button>';
  wireQuestions();
  $('refreshTimeclock').onclick=()=>window.location.reload();
  let signinMethod='id';
  const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
+ const birthFields=$('birthdateFields');
+ const dob={month:'',day:'',year:''};
+ let activePart='month';
+ const parts=['month','day','year'];
+ function yearValue(){
+  if(dob.year.length===4)return Number(dob.year);
+  if(dob.year.length!==2)return null;
+  const short=Number(dob.year),current=new Date().getFullYear()%100;
+  return short<=current?2000+short:1900+short;
+ }
+ function normalizedBirthdate(){
+  const month=Number(dob.month),day=Number(dob.day),year=yearValue();
+  if(!dob.month||!dob.day||!year||month<1||month>12||day<1||day>31||year<1900)return null;
+  const date=new Date(Date.UTC(year,month-1,day,12));
+  if(date.getUTCFullYear()!==year||date.getUTCMonth()+1!==month||date.getUTCDate()!==day||date.getTime()>Date.now())return null;
+  return String(month).padStart(2,'0')+String(day).padStart(2,'0')+String(year);
+ }
+ function choosePart(part){
+  activePart=part;
+  birthFields.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('selected',b.dataset.part===part));
+ }
+ birthFields.querySelectorAll('[data-part]').forEach(b=>b.onclick=()=>{choosePart(b.dataset.part);resetKeypadIdle()});
  $('app').querySelectorAll('[data-method]').forEach(button=>button.onclick=()=>{
   signinMethod=button.dataset.method;
   id.value='';
+  dob.month='';dob.day='';dob.year='';choosePart('month');
   $('loginError').classList.add('hidden');
   $('app').querySelectorAll('[data-method]').forEach(b=>{
    const active=b.dataset.method===signinMethod;
    b.classList.toggle('active',active);
    b.setAttribute('aria-pressed',String(active));
   });
+  display.classList.toggle('hidden',signinMethod==='birthdate');
+  birthFields.classList.toggle('hidden',signinMethod!=='birthdate');
   renderKeypad();
   resetKeypadIdle();
  });
- function smartBirthdate(value){
-  if(!value)return 'M/D/YYYY';
-  // Find an unambiguous completed date first, so 6272002 displays 6/27/2002.
-  if(value.length>=6){
-   const possibilities=[];
-   for(const m of [1,2])for(const d of [1,2]){
-    if(m+d+4!==value.length)continue;
-    const month=Number(value.slice(0,m)),day=Number(value.slice(m,m+d)),year=Number(value.slice(m+d));
-    if(month<1||month>12||day<1||day>31||year<1900)continue;
-    const check=new Date(Date.UTC(year,month-1,day,12));
-    if(check.getUTCFullYear()===year&&check.getUTCMonth()+1===month&&check.getUTCDate()===day&&check.getTime()<=Date.now())possibilities.push(value.slice(0,m)+'/'+value.slice(m,m+d)+'/'+value.slice(m+d));
-   }
-   if(possibilities.length===1)return possibilities[0];
-  }
-  const monthLength=value[0]==='0'||value[0]==='1'?2:1;
-  if(value.length<=monthLength)return value+(monthLength===1?'/':'');
-  const month=value.slice(0,monthLength),remaining=value.slice(monthLength);
-  const dayLength=remaining[0]==='0'||Number(remaining[0])<=3?2:1;
-  if(remaining.length<=dayLength)return month+'/'+remaining+(remaining.length===dayLength?'/':'');
-  return month+'/'+remaining.slice(0,dayLength)+'/'+remaining.slice(dayLength);
- }
  function renderKeypad(){
-  const value=id.value;
-  display.textContent=value?(signinMethod==='birthdate'?smartBirthdate(value):value):(signinMethod==='birthdate'?'M/D/YYYY':'Enter Paychex Employee ID');
-  display.classList.toggle('has-value',!!value);
-  submit.disabled=signinMethod==='birthdate'?!/^\d{6,8}$/.test(value):!value;
+  if(signinMethod==='birthdate'){
+   for(const part of parts){
+    const b=birthFields.querySelector('[data-part="'+part+'"] .field-digits');
+    b.textContent=dob[part]||(part==='month'?'MM':part==='day'?'DD':'YY or YYYY');
+   }
+   submit.disabled=!normalizedBirthdate();
+  }else{
+   const value=id.value;
+   display.textContent=value||'Enter Paychex Employee ID';
+   display.classList.toggle('has-value',!!value);
+   submit.disabled=!value;
+  }
  }
  $('app').querySelectorAll('[data-key]').forEach(button=>button.onclick=()=>{
   const key=button.dataset.key;
-  if(key==='C')id.value='';
-  else if(key==='⌫')id.value=id.value.slice(0,-1);
-  else if(id.value.length<(signinMethod==='birthdate'?8:12))id.value+=key;
+  if(signinMethod==='birthdate'){
+   if(key==='C'){dob[activePart]='';}
+   else if(key==='⌫'){dob[activePart]=dob[activePart].slice(0,-1);}
+   else{
+    const max=activePart==='year'?4:2;
+    if(dob[activePart].length>=max)dob[activePart]='';
+    const next=dob[activePart]+key;
+    const n=Number(next);
+    if(activePart==='month'&&n>12)return;
+    if(activePart==='day'&&n>31)return;
+    dob[activePart]=next;
+    if(activePart==='month'&&(next.length===2||n>=2))choosePart('day');
+    else if(activePart==='day'&&(next.length===2||n>=4))choosePart('year');
+   }
+  }else{
+   if(key==='C')id.value='';
+   else if(key==='⌫')id.value=id.value.slice(0,-1);
+   else if(id.value.length<12)id.value+=key;
+  }
   renderKeypad();resetKeypadIdle();
  });
  async function doLogin(event){
   if(event)event.preventDefault();
   if(submit.disabled)return;
-  const value=id.value.trim();
+  const value=signinMethod==='birthdate'?normalizedBirthdate():id.value.trim();
   const errorBox=$('loginError');
   errorBox.classList.add('hidden');errorBox.textContent='';
-  if(signinMethod==='birthdate'?!/^\d{6,8}$/.test(value):!/^\d{1,12}$/.test(value)){errorBox.textContent=signinMethod==='birthdate'?'Enter your birthdate including a four-digit year.':'Enter a valid employee ID.';errorBox.classList.remove('hidden');return;}
+  if(!value||(signinMethod==='id'&&!/^\d{1,12}$/.test(value))){errorBox.textContent=signinMethod==='birthdate'?'Enter a valid month, day and year.':'Enter a valid employee ID.';errorBox.classList.remove('hidden');return;}
   submit.disabled=true;submit.textContent='Signing In…';
   try{
    await api('login',{id:value,method:signinMethod});
