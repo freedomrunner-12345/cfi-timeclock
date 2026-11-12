@@ -355,6 +355,8 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 .signin-method{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:#5d616c;font-size:15px;font-weight:650;cursor:pointer}
 .signin-method.active{background:#fff;color:#b81025;box-shadow:0 1px 5px #15182320}
 .signin-method:focus-visible{outline:3px solid #b81025;outline-offset:2px}
+.employee-id-hint{margin:9px 0 0;color:#777b85;font-size:14px;font-weight:500;letter-spacing:0}
+.employee-id-hint strong{font-weight:750;color:#393d47;font-variant-numeric:tabular-nums}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -540,11 +542,32 @@ function signin(){
   renderKeypad();
   resetKeypadIdle();
  });
+ function smartBirthdate(value){
+  if(!value)return 'M/D/YYYY';
+  // Find an unambiguous completed date first, so 6272002 displays 6/27/2002.
+  if(value.length>=6){
+   const possibilities=[];
+   for(const m of [1,2])for(const d of [1,2]){
+    if(m+d+4!==value.length)continue;
+    const month=Number(value.slice(0,m)),day=Number(value.slice(m,m+d)),year=Number(value.slice(m+d));
+    if(month<1||month>12||day<1||day>31||year<1900)continue;
+    const check=new Date(Date.UTC(year,month-1,day,12));
+    if(check.getUTCFullYear()===year&&check.getUTCMonth()+1===month&&check.getUTCDate()===day&&check.getTime()<=Date.now())possibilities.push(value.slice(0,m)+'/'+value.slice(m,m+d)+'/'+value.slice(m+d));
+   }
+   if(possibilities.length===1)return possibilities[0];
+  }
+  const monthLength=value[0]==='0'||value[0]==='1'?2:1;
+  if(value.length<=monthLength)return value+(monthLength===1?'/':'');
+  const month=value.slice(0,monthLength),remaining=value.slice(monthLength);
+  const dayLength=remaining[0]==='0'||Number(remaining[0])<=3?2:1;
+  if(remaining.length<=dayLength)return month+'/'+remaining+(remaining.length===dayLength?'/':'');
+  return month+'/'+remaining.slice(0,dayLength)+'/'+remaining.slice(dayLength);
+ }
  function renderKeypad(){
   const value=id.value;
-  display.textContent=value?(signinMethod==='birthdate'?value.slice(0,2)+(value.length>2?'/'+value.slice(2,4):'')+(value.length>4?'/'+value.slice(4):''):value):(signinMethod==='birthdate'?'MM/DD/YYYY':'Enter Paychex Employee ID');
+  display.textContent=value?(signinMethod==='birthdate'?smartBirthdate(value):value):(signinMethod==='birthdate'?'M/D/YYYY':'Enter Paychex Employee ID');
   display.classList.toggle('has-value',!!value);
-  submit.disabled=signinMethod==='birthdate'?value.length!==8:!value;
+  submit.disabled=signinMethod==='birthdate'?!/^\d{6,8}$/.test(value):!value;
  }
  $('app').querySelectorAll('[data-key]').forEach(button=>button.onclick=()=>{
   const key=button.dataset.key;
@@ -559,7 +582,7 @@ function signin(){
   const value=id.value.trim();
   const errorBox=$('loginError');
   errorBox.classList.add('hidden');errorBox.textContent='';
-  if(signinMethod==='birthdate'?!/^\d{8}$/.test(value):!/^\d{1,12}$/.test(value)){errorBox.textContent=signinMethod==='birthdate'?'Enter birthdate as MMDDYYYY.':'Enter a valid employee ID.';errorBox.classList.remove('hidden');return;}
+  if(signinMethod==='birthdate'?!/^\d{6,8}$/.test(value):!/^\d{1,12}$/.test(value)){errorBox.textContent=signinMethod==='birthdate'?'Enter your birthdate including a four-digit year.':'Enter a valid employee ID.';errorBox.classList.remove('hidden');return;}
   submit.disabled=true;submit.textContent='Signing In…';
   try{
    await api('login',{id:value,method:signinMethod});
@@ -591,7 +614,7 @@ function render(){
  const last=entries.length?entries[entries.length-1]:null;
  const list=entries.map(p=>'<div class="punch-entry"><i class="entry-dot '+(p.kind==='OUT'?'out':'')+'"></i><span class="punch-label">'+(p.kind==='IN'?'In':'Out')+'</span><span class="punch-time">'+fmt(p.at)+'</span></div>').join('');
  $('app').innerHTML='<div class="clock-home">'
-  +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1></header>'
+  +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1><div class="employee-id-hint">Your Paychex Employee ID: <strong>'+escapeHTML(s.user.id)+'</strong></div></header>'
   +'<section class="primary-zone" aria-label="Clock Status"><div class="status-line"><span class="entry-dot '+(on?'':'out')+'"></span>'+(on?'Currently Clocked In':'Currently Clocked Out')+'</div>'
   +'<button class="main-clock-button" id="punch" type="button"><span class="clock-arrow" aria-hidden="true">'+(on?'↑':'↓')+'</span>Clock '+(on?'Out':'In')+'</button>'
   +(last?'<div class="last-punch">Last '+(last.kind==='IN'?'In':'Out')+' · '+fmt(last.at)+'</div>':'')+'</section>'
