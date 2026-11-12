@@ -343,6 +343,11 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 @media(max-height:790px){.login-mode .keypad-key{height:clamp(46px,7dvh,58px)}.login-mode .keypad{gap:7px}}
 @media(max-height:610px){.login-mode .keypad-key{height:38px}.login-mode .keypad{gap:5px}.login-mode .keypad-display:not(.has-value){font-size:18px!important}}
 
+/* Sign-in-only reload control for shared kiosk tablets. */
+.signin-refresh{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;margin:6px auto 0;padding:7px 14px;border:0;border-radius:9px;background:transparent;color:#676b75;font-size:15px;font-weight:600;cursor:pointer;touch-action:manipulation}
+.signin-refresh:active{background:#e8e9ee}
+.signin-refresh:focus-visible{outline:3px solid #b81025;outline-offset:2px}
+.signin-refresh svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -511,8 +516,9 @@ function signin(){
   +'<input type="hidden" name="id" id="id">'
   +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
   +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
-  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div>';
+  +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button>';
  wireQuestions();
+ $('refreshTimeclock').onclick=()=>window.location.reload();
  const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
  function renderKeypad(){
   const value=id.value;
