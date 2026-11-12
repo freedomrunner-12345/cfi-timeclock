@@ -112,6 +112,7 @@ export class Timeclock {
     if(!userCols.includes('is_archived'))this.db.exec('ALTER TABLE users ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0');
     if(!userCols.includes('is_tester'))this.db.exec('ALTER TABLE users ADD COLUMN is_tester INTEGER NOT NULL DEFAULT 0');
     if(!userCols.includes('pay_type'))this.db.exec("ALTER TABLE users ADD COLUMN pay_type TEXT NOT NULL DEFAULT 'HOURLY'");
+    if(!userCols.includes('birth_date'))this.db.exec("ALTER TABLE users ADD COLUMN birth_date TEXT NOT NULL DEFAULT ''");
     this.db.exec('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at TEXT NOT NULL)');
     this.db.exec('CREATE TABLE IF NOT EXISTS punches (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, created_at TEXT NOT NULL, corrected_at TEXT)');
     this.db.exec('CREATE TABLE IF NOT EXISTS pto (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT NOT NULL, hours REAL NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, reviewed_at TEXT)');
@@ -148,11 +149,23 @@ export class Timeclock {
       if (route === '/api/config') return json({ pilot: true });
       if (route === '/api/login' && req.method === 'POST') {
         const data = await req.json();
-        const id = String(data.id || '').trim();
-        if (!/^\d{1,12}$/.test(id)) return fail('Please enter a valid employee ID', 400);
-        const employee = this.one('SELECT id,name FROM users WHERE id=?', id);
-        const control = this.one('SELECT enabled FROM employee_controls WHERE id=?', id);
-        if (!employee || control?.enabled === 0) return fail('Employee ID not recognized. Please contact the office.', 401);
+        const method = data.method === 'birthdate' ? 'birthdate' : 'id';
+        const value = String(data.id || '').trim();
+        let employee;
+        if (method === 'birthdate') {
+          if (!/^\d{8}$/.test(value)) return fail('Enter your birthdate as MMDDYYYY.', 400);
+          const date = value.slice(4) + '-' + value.slice(0,2) + '-' + value.slice(2,4);
+          const parsed = new Date(date + 'T12:00:00Z');
+          if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0,10) !== date || parsed.getTime() > Date.now()) return fail('Enter a valid birthdate.', 400);
+          const matches = this.all('SELECT u.id,u.name FROM users u LEFT JOIN employee_controls ec ON ec.id=u.id WHERE u.birth_date=? AND u.is_archived=0 AND COALESCE(ec.enabled,1)=1 LIMIT 2',date);
+          if(matches.length !== 1) return fail('Birthdate sign-in unavailable. Please use your Paychex ID or contact the office.', 401);
+          employee = matches[0];
+        } else {
+          if (!/^\d{1,12}$/.test(value)) return fail('Please enter a valid employee ID', 400);
+          employee = this.one('SELECT id,name FROM users WHERE id=? AND is_archived=0', value);
+        }
+        const control = employee && this.one('SELECT enabled FROM employee_controls WHERE id=?', employee.id);
+        if (!employee || control?.enabled === 0) return fail('Sign-in not recognized. Please contact the office.', 401);
         return this.newSession(employee.id);
       }
       if (route === '/api/logout' && req.method === 'POST') {
