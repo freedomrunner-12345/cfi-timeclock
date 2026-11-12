@@ -1,0 +1,49 @@
+name: Build CFI Time Clock APK
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Prepare CFI icon
+        run: |
+          mkdir -p android/app/src/main/res/drawable-nodpi
+          cp public/icon-192.png android/app/src/main/res/drawable-nodpi/icon.png
+      - name: Build installable APK
+        working-directory: android
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Publish APK to time-clock site
+        run: |
+          mkdir -p public/downloads
+          cp android/app/build/outputs/apk/debug/app-debug.apk public/downloads/cfi-timeclock.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/cfi-timeclock.apk
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Android time clock APK [skip ci]"
+            git push
+          fi
+      - name: Save APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfi-timeclock-android-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
