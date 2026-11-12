@@ -350,6 +350,11 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 .signin-refresh svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .apk-download{display:flex;align-items:center;justify-content:center;width:max-content;max-width:100%;margin:8px auto 0;padding:10px 14px;border:1px solid #e4c8cf;border-radius:9px;background:#fff8fa;color:#b81025;font-size:14px;font-weight:700;text-align:center;text-decoration:none;touch-action:manipulation}
 .apk-download.hidden{display:none!important}
+/* Compact alternative sign-in method selector */
+.signin-methods{display:flex;gap:5px;margin:-4px 0 14px;padding:4px;border-radius:11px;background:#e9eaf0}
+.signin-method{flex:1;min-height:40px;border:0;border-radius:8px;background:transparent;color:#5d616c;font-size:15px;font-weight:650;cursor:pointer}
+.signin-method.active{background:#fff;color:#b81025;box-shadow:0 1px 5px #15182320}
+.signin-method:focus-visible{outline:3px solid #b81025;outline-offset:2px}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null;
@@ -513,7 +518,7 @@ function signin(){
  clearInterval(interval);stopCountdown();state=null;
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');
  const keys=['1','2','3','4','5','6','7','8','9','C','0','⌫'];
- $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2>'
+ $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><div class="signin-methods" role="group" aria-label="Sign in using"><button type="button" class="signin-method active" data-method="id" aria-pressed="true">Paychex ID</button><button type="button" class="signin-method" data-method="birthdate" aria-pressed="false">Birthdate</button></div>'
   +'<form id="login" autocomplete="off"><label class="field visually-hidden" for="id">Paychex Employee ID</label>'
   +'<input type="hidden" name="id" id="id">'
   +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
@@ -521,18 +526,31 @@ function signin(){
   +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button><a id="androidApkDownload" class="apk-download" href="https://raw.githubusercontent.com/freedomrunner-12345/cfi-timeclock/main/public/downloads/cfi-timeclock.apk">Download CFI Time Clock for Android</a>';
  wireQuestions();
  $('refreshTimeclock').onclick=()=>window.location.reload();
+ let signinMethod='id';
  const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
+ $('app').querySelectorAll('[data-method]').forEach(button=>button.onclick=()=>{
+  signinMethod=button.dataset.method;
+  id.value='';
+  $('loginError').classList.add('hidden');
+  $('app').querySelectorAll('[data-method]').forEach(b=>{
+   const active=b.dataset.method===signinMethod;
+   b.classList.toggle('active',active);
+   b.setAttribute('aria-pressed',String(active));
+  });
+  renderKeypad();
+  resetKeypadIdle();
+ });
  function renderKeypad(){
   const value=id.value;
-  display.textContent=value||'Enter Paychex Employee ID';
+  display.textContent=value?(signinMethod==='birthdate'?value.slice(0,2)+(value.length>2?'/'+value.slice(2,4):'')+(value.length>4?'/'+value.slice(4):''):value):(signinMethod==='birthdate'?'MM/DD/YYYY':'Enter Paychex Employee ID');
   display.classList.toggle('has-value',!!value);
-  submit.disabled=!value;
+  submit.disabled=signinMethod==='birthdate'?value.length!==8:!value;
  }
  $('app').querySelectorAll('[data-key]').forEach(button=>button.onclick=()=>{
   const key=button.dataset.key;
   if(key==='C')id.value='';
   else if(key==='⌫')id.value=id.value.slice(0,-1);
-  else if(id.value.length<12)id.value+=key;
+  else if(id.value.length<(signinMethod==='birthdate'?8:12))id.value+=key;
   renderKeypad();resetKeypadIdle();
  });
  async function doLogin(event){
@@ -541,10 +559,10 @@ function signin(){
   const value=id.value.trim();
   const errorBox=$('loginError');
   errorBox.classList.add('hidden');errorBox.textContent='';
-  if(!/^\d{1,12}$/.test(value)){errorBox.textContent='Enter a valid employee ID.';errorBox.classList.remove('hidden');return;}
+  if(signinMethod==='birthdate'?!/^\d{8}$/.test(value):!/^\d{1,12}$/.test(value)){errorBox.textContent=signinMethod==='birthdate'?'Enter birthdate as MMDDYYYY.':'Enter a valid employee ID.';errorBox.classList.remove('hidden');return;}
   submit.disabled=true;submit.textContent='Signing In…';
   try{
-   await api('login',{id:value});
+   await api('login',{id:value,method:signinMethod});
    await load(true);
   }catch(error){
    errorBox.textContent=error.message||'Unable to sign in. Please try again.';
