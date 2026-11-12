@@ -153,10 +153,23 @@ export class Timeclock {
         const value = String(data.id || '').trim();
         let employee;
         if (method === 'birthdate') {
-          if (!/^\d{8}$/.test(value)) return fail('Enter your birthdate as MMDDYYYY.', 400);
-          const date = value.slice(4) + '-' + value.slice(0,2) + '-' + value.slice(2,4);
-          const parsed = new Date(date + 'T12:00:00Z');
-          if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0,10) !== date || parsed.getTime() > Date.now()) return fail('Enter a valid birthdate.', 400);
+          if (!/^\d{6,8}$/.test(value)) return fail('Enter your complete birthdate, including the four-digit year.', 400);
+          // Support M/D/YYYY, M/DD/YYYY, MM/D/YYYY and MM/DD/YYYY.
+          // A seven-digit input can describe two valid dates; reject it rather
+          // than risk signing an employee into someone else's account.
+          const possibleDates = new Set();
+          for (const monthDigits of [1,2]) for (const dayDigits of [1,2]) {
+            if (monthDigits + dayDigits + 4 !== value.length) continue;
+            const month = Number(value.slice(0,monthDigits));
+            const day = Number(value.slice(monthDigits,monthDigits+dayDigits));
+            const year = Number(value.slice(monthDigits+dayDigits));
+            if(month<1||month>12||day<1||day>31||year<1900)continue;
+            const date = String(year).padStart(4,'0')+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+            const parsed = new Date(date + 'T12:00:00Z');
+            if(Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10)===date && parsed.getTime()<=Date.now())possibleDates.add(date);
+          }
+          if(possibleDates.size!==1) return fail(possibleDates.size>1?'That date could mean two different birthdays. Please enter both month and day with two digits.':'Enter a valid birthdate.',400);
+          const date = [...possibleDates][0];
           const matches = this.all('SELECT u.id,u.name FROM users u LEFT JOIN employee_controls ec ON ec.id=u.id WHERE u.birth_date=? AND u.is_archived=0 AND COALESCE(ec.enabled,1)=1 LIMIT 2',date);
           if(matches.length !== 1) return fail('Birthdate sign-in unavailable. Please use your Paychex ID or contact the office.', 401);
           employee = matches[0];
