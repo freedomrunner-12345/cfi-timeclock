@@ -12,6 +12,19 @@ const validBirthDate=value=>{
 const punchesFor=(store,emp,week)=>store.all('SELECT id,kind,at,corrected_at FROM punches WHERE user_id=? ORDER BY at',emp).filter(x=>store.week(store.date(x.at))===week);
 export async function adminOps(store,request){
  const url=new URL(request.url),route=url.pathname,method=request.method;
+
+ // Read-only, all-history punch backup (not restricted to the selected week).
+ if(route==='/api/admin/punch-backup' && method==='GET'){
+  const punches=store.all('SELECT p.id,p.user_id,u.name,u.pay_type,u.is_archived,p.kind,p.at,p.created_at,p.corrected_at FROM punches p LEFT JOIN users u ON u.id=p.user_id ORDER BY u.name COLLATE NOCASE,p.at,p.id');
+  const clock=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
+  const rows=['Employee ID,Employee Name,Pay Type,Employee Status,Clock Date (Central),Clock Time (Central),Punch Type,Punch Timestamp (UTC),Punch ID,Recorded At (UTC),Corrected At (UTC)'];
+  for(const p of punches){
+   const values=[p.user_id,p.name||'[Unknown employee]',p.pay_type||'',p.is_archived===1?'Archived':'Active',store.date(p.at),clock.format(new Date(p.at)),p.kind,p.at,p.id,p.created_at,p.corrected_at||''];
+   rows.push(values.map(csvCell).join(','));
+  }
+  const filename='cfi-full-punch-backup-'+store.date(new Date().toISOString())+'.csv';
+  return new Response('\ufeff'+rows.join('\r\n')+'\r\n',{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="'+filename+'"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+ }
  const today=store.date(new Date().toISOString());
  const asked=url.searchParams.get('week');
  const week=asked&&/^\d{4}-\d{2}-\d{2}$/.test(asked)&&store.week(asked)===asked?asked:store.week(today);
