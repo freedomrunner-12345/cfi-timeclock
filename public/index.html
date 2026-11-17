@@ -448,7 +448,7 @@ main.signed-in-mode.clocked-in{background:transparent}
 .welcome-touch[data-theme]:not([data-theme="classic"])::before,
 .welcome-touch[data-theme]:not([data-theme="classic"]) .ambient-white{background:var(--bloom)}
 .welcome-touch[data-theme]:not([data-theme="classic"]) .welcome-rule{background:var(--accent);box-shadow:0 0 19px var(--accent)}
-</style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
+</style><link rel="stylesheet" href="/seasonal-scenes.css"></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script src="/seasonal-scenes.js"></script><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
 const welcomeTimeFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true});
@@ -524,7 +524,12 @@ async function refreshWelcomeTheme(){
   if(!response.ok)return;
   const data=await response.json();
   const el=$('welcomeTouch');
-  if(el)el.dataset.theme=typeof data.theme==='string'?data.theme:'classic';
+  if(el){
+   const theme=typeof data.theme==='string'&&window.CFIThemeScene?.ids.includes(data.theme)?data.theme:'classic';
+   el.dataset.theme=theme;
+   const scene=el.querySelector('.season-scene');
+   if(scene&&window.CFIThemeScene)scene.outerHTML=window.CFIThemeScene.markup(theme);
+  }
  }catch(error){/* Theme preference cannot prevent employee login. */}
 }
 function welcome(){
@@ -532,7 +537,7 @@ function welcome(){
  clearKeypadIdle();preserveSessionControls();clearInterval(interval);stopCountdown();state=null;
  const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode','clocked-in','clocked-out');main.classList.add('welcome-mode');document.body.classList.remove('employee-clocked-in');
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
- $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i><span class="welcome-clock"><span class="welcome-time" id="welcomeTime"></span><span class="welcome-date" id="welcomeDate"></span></span></span><span class="welcome-prompt">Tap to Get Started</span></button>';
+ $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="season-scene" aria-hidden="true"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i><span class="welcome-clock"><span class="welcome-time" id="welcomeTime"></span><span class="welcome-date" id="welcomeDate"></span></span></span><span class="welcome-prompt">Tap to Get Started</span></button>';
  $('welcomeTouch').onclick=transitionToSignin;
  startWelcomeClock();
  refreshWelcomeTheme();
