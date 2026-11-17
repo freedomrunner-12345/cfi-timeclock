@@ -380,6 +380,18 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 .welcome-time{font-size:clamp(52px,11vw,88px);font-weight:790;letter-spacing:-.067em;line-height:1.05;color:#fff;white-space:nowrap}
 .welcome-date{font-size:clamp(16px,3.9vw,24px);font-weight:450;letter-spacing:-.025em;color:#e6dfe4}
 @media(max-height:620px){.welcome-clock{margin-top:22px}.welcome-time{font-size:clamp(45px,10vw,70px)}}
+
+/* At-a-glance employee status: green when working, red to finish. */
+body.employee-clocked-in{background:#ebf7ef}
+main.signed-in-mode.clocked-in{background:linear-gradient(180deg,#e4f5e9 0%,#edf9f1 60%,#f5f8f6 100%)}
+.signed-in-mode.clocked-in .primary-zone{background:#f9fffb;border:2px solid #a8dcbc;box-shadow:0 14px 35px #12683e14}
+.signed-in-mode.clocked-in .status-line{color:#14794d}
+.signed-in-mode.clocked-in .status-line .entry-dot{background:#15945b;box-shadow:0 0 0 5px #15945b15}
+.signed-in-mode.clocked-out .main-clock-button{background:#148454;box-shadow:0 12px 23px #1484542d}
+.signed-in-mode.clocked-out .main-clock-button:active{background:#0e7046}
+.signed-in-mode.clocked-out .main-clock-button:focus-visible{outline-color:#148454}
+.signed-in-mode.clocked-in .main-clock-button{background:#b81025}
+.signed-in-mode.clocked-in .main-clock-button:active{background:#a40c20}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
@@ -452,7 +464,7 @@ function setAppTheme(color){document.querySelector('meta[name="theme-color"]')?.
 function welcome(){
  setAppTheme('#101116');
  clearKeypadIdle();preserveSessionControls();clearInterval(interval);stopCountdown();state=null;
- const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode');main.classList.add('welcome-mode');
+ const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode','clocked-in','clocked-out');main.classList.add('welcome-mode');document.body.classList.remove('employee-clocked-in');
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
  $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i><span class="welcome-clock"><span class="welcome-time" id="welcomeTime"></span><span class="welcome-date" id="welcomeDate"></span></span></span><span class="welcome-prompt">Tap to Get Started</span></button>';
  $('welcomeTouch').onclick=transitionToSignin;
@@ -547,21 +559,22 @@ function signin(){
  setAppTheme('#f7f7f9');
  clearKeypadIdle();
  preserveSessionControls();
- document.querySelector('main').classList.remove('signed-in-mode','welcome-mode');
+ document.querySelector('main').classList.remove('signed-in-mode','welcome-mode','clocked-in','clocked-out');
+ document.body.classList.remove('employee-clocked-in');
  document.querySelector('main').classList.add('login-mode');
  clearInterval(interval);stopCountdown();state=null;
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');
  const keys=['1','2','3','4','5','6','7','8','9','C','0','⌫'];
- $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><div class="signin-methods" role="group" aria-label="Sign in using"><button type="button" class="signin-method active" data-method="id" aria-pressed="true">Paychex ID</button><button type="button" class="signin-method" data-method="birthdate" aria-pressed="false">Birthdate</button></div>'
+ $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><div class="signin-methods" role="group" aria-label="Sign in using"><button type="button" class="signin-method active" data-method="birthdate" aria-pressed="true">Birthdate</button><button type="button" class="signin-method" data-method="id" aria-pressed="false">Paychex ID</button></div>'
   +'<form id="login" autocomplete="off"><label class="field visually-hidden" for="id">Paychex Employee ID</label>'
   +'<input type="hidden" name="id" id="id">'
-  +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
-  +'<div id="birthdateFields" class="birthdate-fields hidden" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YYYY</span></button></div><p id="yearTip" class="birthdate-year-tip hidden">2-digit year works too</p>'
+  +'<output class="keypad-display hidden" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
+  +'<div id="birthdateFields" class="birthdate-fields" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YYYY</span></button></div><p id="yearTip" class="birthdate-year-tip">2-digit year works too</p>'
   +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
   +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button>';
  wireQuestions();
  $('refreshTimeclock').onclick=()=>window.location.reload();
- let signinMethod='id';
+ let signinMethod='birthdate';
  const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
  const birthFields=$('birthdateFields');
  const dob={month:'',day:'',year:''};
@@ -658,6 +671,7 @@ function signin(){
  }
  submit.onclick=doLogin;
  $('login').onsubmit=doLogin;
+ renderKeypad();
  resetKeypadIdle();
 }
 function firstName(name){const n=String(name||'').trim();return n.includes(',')?(n.split(',')[1]?.trim().split(/\s+/)[0]||'there'):(n.split(/\s+/)[0]||'there')}
@@ -668,11 +682,13 @@ function render(){
  preserveSessionControls();
  const main=document.querySelector('main');
  clearKeypadIdle();
- main.classList.remove('login-mode','welcome-mode');
+ main.classList.remove('login-mode','welcome-mode','clocked-in','clocked-out');
  main.classList.add('signed-in-mode');
  $('signout').classList.remove('hidden');
  $('sessionControls').classList.remove('hidden');
  const s=state,first=escapeHTML((s.user.preferredName||firstName(s.user.name))),on=s.isClockedIn;
+ main.classList.add(on?'clocked-in':'clocked-out');
+ document.body.classList.toggle('employee-clocked-in',on);
  const entries=punchesToday(s);
  const last=entries.length?entries[entries.length-1]:null;
  const count=entries.length;
