@@ -1,4 +1,4 @@
-import { WELCOME_THEMES, normalizeWelcomeSettings, activeWelcomeTheme } from './welcome-themes.js';
+import { WELCOME_THEMES, normalizeWelcomePlan, validateWelcomePlan, activeWelcomeTheme } from './welcome-themes.js';
 const result=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...headers}});
 const error=(message,status=400)=>result({error:message},status);
 const id=()=>crypto.randomUUID();
@@ -28,16 +28,16 @@ export async function adminOps(store,request){
  }
  if(route==='/api/admin/welcome-theme'){
   if(method==='GET'){
-   const settings=normalizeWelcomeSettings(await store.ctx.storage.get('welcome_theme_settings'));
-   return result({settings,activeTheme:activeWelcomeTheme(settings),options:WELCOME_THEMES});
+   const plan=normalizeWelcomePlan(await store.ctx.storage.get('welcome_theme_plan_v2'));
+   return result({plan,activeTheme:activeWelcomeTheme(plan),options:WELCOME_THEMES});
   }
   if(method==='POST'){
-   const payload=await request.json();
-   if(!payload||!['manual','automatic'].includes(payload.mode)||typeof payload.theme!=='string'||!WELCOME_THEMES.includes(payload.theme))
-    return error('Choose a valid theme and activation mode');
-   const settings={mode:payload.mode,theme:payload.theme};
-   await store.ctx.storage.put('welcome_theme_settings',settings);
-   return result({ok:true,settings,activeTheme:activeWelcomeTheme(settings)});
+   const submitted=await request.json();
+   let plan;
+   try{plan=validateWelcomePlan(submitted)}catch(e){return error(e.message)}
+   // Durable Object key-value storage only. Punch and payroll SQL untouched.
+   await store.ctx.storage.put('welcome_theme_plan_v2',plan);
+   return result({ok:true,plan,activeTheme:activeWelcomeTheme(plan)});
   }
   return error('Method not allowed',405);
  }

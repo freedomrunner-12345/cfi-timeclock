@@ -49,10 +49,10 @@
 :is(.welcome-touch,.theme-stage) .season-scene *, :is(.welcome-touch,.theme-stage) .season-scene *::before{
  box-sizing:border-box;pointer-events:none
 }
-.theme-stage .preview-center,.theme-stage .preview-prompt,
-.welcome-touch .welcome-center,.welcome-touch .welcome-prompt{
- position:relative;z-index:2
-}
+.theme-stage .preview-center,.theme-stage .preview-prompt{position:relative;z-index:2}
+.welcome-touch .welcome-center{position:relative;z-index:2}
+/* Preserve the original welcome layout: the prompt stays anchored at the bottom. */
+.welcome-touch .welcome-prompt{position:absolute;z-index:2}
 /* Idle screen's old generic color glows should never cover themed art. */
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::before,
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::after,
