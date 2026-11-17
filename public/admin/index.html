@@ -134,6 +134,24 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .remember-admin{display:flex;align-items:center;gap:11px;font-size:15px;color:#454751;font-weight:650;margin:-4px 0 18px;cursor:pointer}
 .remember-admin input{width:18px;height:18px;accent-color:#b81025}
 @media(max-width:650px){.presence-groups{grid-template-columns:1fr}.presence-person small{white-space:normal;text-align:right}}
+
+/* Admin-only theme library. */
+.theme-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:15px 0 20px}
+.theme-mode{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid #e8e8ed;border-radius:13px;background:#fafafd;font-weight:650}
+.theme-mode input{accent-color:#b81025;width:18px;height:18px}
+.theme-collection{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.theme-tile{border:1px solid #e4e4e9;border-radius:19px;padding:11px;background:#fff;min-width:0}
+.theme-swatch{height:152px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:11px;color:white;text-align:center;position:relative;overflow:hidden;background:radial-gradient(ellipse at 58% 38%,var(--theme-middle),var(--theme-bottom) 82%)}
+.theme-swatch:after{content:"";position:absolute;width:160px;height:160px;right:-80px;top:-65px;border-radius:50%;background:var(--theme-glow);filter:blur(30px);opacity:.8}
+.theme-swatch strong{position:relative;z-index:1;font-size:15px;letter-spacing:-.03em}
+.theme-swatch i{position:relative;z-index:1;height:3px;width:32px;border-radius:9px;background:var(--theme-accent)}
+.theme-swatch em{position:relative;z-index:1;font-size:22px;font-weight:800;letter-spacing:-.05em;font-style:normal}
+.theme-info{display:flex;align-items:center;justify-content:space-between;gap:7px;margin:10px 1px}
+.theme-info b{font-size:15px}.theme-active{font-size:12px;font-weight:800;color:#187b55;background:#e7f5ed;border-radius:99px;padding:4px 8px}
+.theme-tile button{width:100%;min-height:39px;font-size:14px;padding:8px 12px}
+.theme-tile button:disabled{opacity:1;background:#e7f5ed;color:#247b56;cursor:default}
+@media(max-width:670px){.theme-collection{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.theme-collection{grid-template-columns:1fr}}
 </style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script src="/admin/smart-entry.js"></script><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -192,8 +210,46 @@ async function refreshPresence(quiet=false){if(document.hidden||!document.queryS
 
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
 function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.payType==='SALARY'?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
-$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div>'+presenceHtml()+'<nav class="tabs">'+['overview','paychex','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
+$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div>'+presenceHtml()+'<nav class="tabs">'+['overview','paychex','employees','pto','themes'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests',themes:'Themes'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
 $('refreshPresence').onclick=()=>refreshPresence(false);$('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
+const WELCOME_THEME_PRESETS=[
+ {id:'classic',name:'Classic CFI',mid:'#38202e',bottom:'#101219',glow:'#bd3859',accent:'#bc1837'},
+ {id:'winter',name:'Winter',mid:'#214d76',bottom:'#081426',glow:'#88d5f8',accent:'#9edcff'},
+ {id:'spring',name:'Spring',mid:'#366b5a',bottom:'#142f32',glow:'#f7b3ab',accent:'#f5b8a4'},
+ {id:'summer',name:'Summer',mid:'#155d76',bottom:'#10233e',glow:'#f6b465',accent:'#ffd193'},
+ {id:'autumn',name:'Autumn',mid:'#70432e',bottom:'#201d27',glow:'#f49c4c',accent:'#efaa68'},
+ {id:'thanksgiving',name:'Thanksgiving',mid:'#805030',bottom:'#29212a',glow:'#e4a15b',accent:'#ffd094'},
+ {id:'halloween',name:'Halloween',mid:'#4a275f',bottom:'#120e1f',glow:'#ff8428',accent:'#ff9c43'},
+ {id:'winterlights',name:'Winter Lights',mid:'#24473c',bottom:'#0e1c25',glow:'#f5c77d',accent:'#f1cd94'},
+ {id:'newyear',name:'New Year',mid:'#32395d',bottom:'#0a1022',glow:'#edc477',accent:'#e8c77c'},
+ {id:'patriotic',name:'Patriotic',mid:'#244a7f',bottom:'#10182d',glow:'#dd3c56',accent:'#e95b70'}
+];
+let themeSettings=null;
+async function drawThemes(c){
+ c.innerHTML='<section class="card"><h2>Welcome Screen Themes</h2><p class="muted">Only changes the idle clock screen, not employee punches or sign-in.</p><div id="themePanel">Loading themes…</div></section>';
+ try{
+  const result=await api('welcome-theme');
+  if(tab!=='themes'||!c.isConnected)return;
+  themeSettings=result.settings;
+  renderThemePanel(c,result.activeTheme);
+ }catch(err){if(tab==='themes'&&c.querySelector('#themePanel'))c.querySelector('#themePanel').textContent='Unable to load themes: '+err.message}
+}
+function renderThemePanel(c,active){
+ const panel=c.querySelector('#themePanel');if(!panel)return;
+ const mode=themeSettings?.mode||'manual';
+ panel.innerHTML='<div class="theme-toolbar"><label class="theme-mode"><input id="themeAutomatic" type="checkbox" '+(mode==='automatic'?'checked':'')+'> Automatic seasonal schedule</label><span class="muted small">'+(mode==='automatic'?'December uses Winter Lights. Thanksgiving and New Year change automatically.':'Choose any theme and activate it.')+'</span></div>'
+ +'<div class="theme-collection">'+WELCOME_THEME_PRESETS.map(t=>'<div class="theme-tile"><div class="theme-swatch" style="--theme-middle:'+t.mid+';--theme-bottom:'+t.bottom+';--theme-glow:'+t.glow+';--theme-accent:'+t.accent+'"><strong>Time Clock</strong><i></i><em>8:30 AM</em></div><div class="theme-info"><b>'+t.name+'</b>'+(t.id===active?'<span class="theme-active">Active</span>':'')+'</div><button type="button" class="btn '+(t.id===active?'outline':'red')+'" data-theme-activate="'+t.id+'" '+(mode==='automatic'?'disabled title="Switch off Automatic to choose a theme"':t.id===active?'disabled':'')+'>'+(t.id===active?'Active':'Activate')+'</button></div>').join('')+'</div>';
+ panel.querySelector('#themeAutomatic').onchange=async e=>{
+  const checkbox=e.currentTarget,desired=checkbox.checked?'automatic':'manual';checkbox.disabled=true;
+  try{const r=await api('welcome-theme',{mode:desired,theme:themeSettings.theme});themeSettings=r.settings;renderThemePanel(c,r.activeTheme);alertUser(desired==='automatic'?'Seasonal schedule enabled':'Manual theme selection enabled')}
+  catch(error){checkbox.checked=!checkbox.checked;checkbox.disabled=false;alertUser(error.message)}
+ };
+ panel.querySelectorAll('[data-theme-activate]').forEach(button=>button.onclick=async()=>{
+  button.disabled=true;const chosen=button.dataset.themeActivate;
+  try{const r=await api('welcome-theme',{mode:'manual',theme:chosen});themeSettings=r.settings;renderThemePanel(c,r.activeTheme);alertUser('Theme activated. Reload a tablet welcome screen to see it.')}
+  catch(error){button.disabled=false;alertUser(error.message)}
+ });
+}
 function drawPaychexEntry(c){
  const hourly=state.employees.filter(e=>e.payType!=='SALARY').sort((a,b)=>a.name.localeCompare(b.name));
  const salaried=state.employees.filter(e=>e.payType==='SALARY');
@@ -220,7 +276,7 @@ function drawPaychexEntry(c){
   +'<p class="paychex-note">Regular and overtime hours use the time clock’s weekly rounding. PTO shows approved hours only. Salaried employees ('+salaried.length+') are excluded from this entry table and its totals. This is a reference for manual Paychex entry—not an automatic payroll submission.</p></section>';
  c.querySelectorAll('[data-paychex-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.paychexView)));
 }
-function drawContent(){const c=$('content');if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
+function drawContent(){const c=$('content');if(tab==='themes'){drawThemes(c);return}if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
  const people=state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name));
  c.innerHTML='<details class="card employee-form-details"><summary>Import employee roster</summary><p class="muted">Import a roster file (.tsv).</p><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></details>'
  +'<details class="card employee-form-details"><summary>Add employee</summary><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></details>'
