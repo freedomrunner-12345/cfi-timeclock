@@ -9,3 +9,21 @@ https://lucide.dev/license
 The asset copies retain their original geometry; colors and stroke weights
 were adjusted for CFI's seasonal scene artwork. The icons are served locally
 with the time-clock site, without a third-party runtime dependency.
+
+Microsoft Fluent Emoji seasonal assets
+-----------------------------------
+Source: https://github.com/microsoft/fluentui-emoji
+Copyright (c) Microsoft Corporation.
+Licensed under MIT (full text: LICENSE-Fluent-Emoji.txt).
+Assets: fluent-turkey.svg, fluent-christmas-tree.svg,
+fluent-fallen-leaf.svg, fluent-maple-leaf.svg, fluent-wind-leaf.svg,
+fluent-sparkles.svg, fluent-party-popper.svg.
+Files are reproduced as provided by the upstream project.
+
+US flag asset
+-------------
+Source: https://github.com/lipis/flag-icons
+Copyright (c) 2013 Panayiotis Lipiridis and contributors.
+Licensed under MIT (full text: LICENSE-Flag-Icons.txt).
+Asset: us-flag.svg, based on the actual United States flag.
+Files are reproduced as provided by the upstream project.
