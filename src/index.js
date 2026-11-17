@@ -1,4 +1,5 @@
 import { handleAdmin } from './admin.js';
+import { validatedWelcomeTheme } from './welcome-themes.js';
 
 const ZONE = 'America/Chicago';
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -147,6 +148,10 @@ export class Timeclock {
       }
       if (route.startsWith('/api/admin/')) return handleAdmin(this, req);
       if (route === '/api/config') return json({ pilot: true });
+      if (route === '/api/welcome-theme' && req.method === 'GET') {
+        const saved=await this.ctx.storage.get('welcome_theme');
+        return json({theme:validatedWelcomeTheme(saved)});
+      }
       if (route === '/api/login' && req.method === 'POST') {
         const data = await req.json();
         const method = data.method === 'birthdate' ? 'birthdate' : 'id';
