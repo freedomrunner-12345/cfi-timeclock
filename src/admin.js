@@ -5,14 +5,15 @@ const newId=()=>crypto.randomUUID();
 const hex=buf=>Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
 const sha=async value=>hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)));
 const equal=(a,b)=>a.length===b.length&&[...a].reduce((v,c,i)=>v|(c.charCodeAt(0)^b.charCodeAt(i)),0)===0;
-const adminCookie=(value,clear=false)=>'cfi_admin='+value+'; Path=/api/admin; HttpOnly; Secure; SameSite=Strict; '+(clear?'Max-Age=0':'Max-Age=43200');
+const adminCookie=(value,clear=false,rememberDevice=false)=>'cfi_admin='+value+'; Path=/api/admin; HttpOnly; Secure; SameSite=Strict; '+(clear?'Max-Age=0':rememberDevice?'Max-Age=2592000':'Max-Age=43200');
 const secretFor=store=>typeof store.env.ADMIN_PASSWORD==='string' && store.env.ADMIN_PASSWORD.length>=12 && store.env.ADMIN_PASSWORD.length<=128 ? store.env.ADMIN_PASSWORD : null;
 const tokenHash=async(token,secret)=>sha(token+'|'+secret);
-const adminSession=async(store,secret)=>{
+const adminSession=async(store,secret,rememberDevice=false)=>{
  const token=newId()+newId();
- store.db.exec('INSERT INTO admin_sessions (token_hash,expires_at) VALUES (?,?)',await tokenHash(token,secret),new Date(Date.now()+12*3600000).toISOString());
+ store.db.exec('DELETE FROM admin_sessions WHERE expires_at<?',new Date().toISOString());
+ store.db.exec('INSERT INTO admin_sessions (token_hash,expires_at) VALUES (?,?)',await tokenHash(token,secret),new Date(Date.now()+(rememberDevice?30*24:12)*3600000).toISOString());
  const response=respond({ok:true});
- response.headers.set('Set-Cookie',adminCookie(token));
+ response.headers.set('Set-Cookie',adminCookie(token,false,rememberDevice));
  return response;
 };
 export async function handleAdmin(store,request){
@@ -31,7 +32,7 @@ export async function handleAdmin(store,request){
    return error('Incorrect admin password',401);
   }
   store.db.exec('DELETE FROM admin_attempts');
-  return adminSession(store,secret);
+  return adminSession(store,secret,data.rememberDevice===true);
  }
  const token=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)cfi_admin=([^;]+)/)?.[1];
  if(route==='/api/admin/logout'&&request.method==='POST'){
