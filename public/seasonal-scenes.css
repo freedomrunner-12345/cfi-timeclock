@@ -167,3 +167,31 @@
  :is(.welcome-touch,.theme-stage) .season-scene *::before,
  :is(.welcome-touch,.theme-stage) .season-scene *::after{animation:none!important;will-change:auto!important}
 }
+
+
+/* Specific seasonal illustrations using the same locally licensed SVG artwork. */
+:is(.welcome-touch,.theme-stage) .scene-harvest{
+ bottom:3%;left:6%;width:23%;height:30%;display:block;
+ background:transparent url('/seasonal-assets/wheat.svg') center bottom/contain no-repeat;
+ opacity:.64;filter:drop-shadow(0 0 17px #edb56a38)
+}
+:is(.welcome-touch,.theme-stage) .scene-harvest i{display:none}
+:is(.welcome-touch,.theme-stage) .scene-moon{
+ width:clamp(60px,15cqw,170px);height:auto;aspect-ratio:1;
+ background:transparent url('/seasonal-assets/moon.svg') center/contain no-repeat;
+ box-shadow:none;filter:drop-shadow(0 0 22px #f9ba6780);opacity:.8
+}
+:is(.welcome-touch,.theme-stage) .scene-sunset{
+ width:clamp(60px,18cqw,190px);height:auto;aspect-ratio:1;
+ background:transparent url('/seasonal-assets/sun.svg') center/contain no-repeat;
+ box-shadow:none;filter:drop-shadow(0 0 26px #ffc16d77);opacity:.76
+}
+:is(.welcome-touch,.theme-stage) .scene-branch{
+ width:28%;height:38%;right:0%;bottom:5%;transform:rotate(-12deg);
+ border:0;border-radius:0;opacity:.5;
+ background:transparent url('/seasonal-assets/flower-2.svg') center/contain no-repeat
+}
+:is(.welcome-touch,.theme-stage) .scene-bats i{
+ background:transparent url('/seasonal-assets/ghost.svg') center/contain no-repeat;
+ width:25px;height:25px;opacity:.65;box-shadow:none
+}
