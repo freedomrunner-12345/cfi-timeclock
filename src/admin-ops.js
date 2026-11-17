@@ -32,7 +32,17 @@ export async function adminOps(store,request){
    const approvedPto=requests.filter(p=>p.status==='APPROVED').reduce((sum,p)=>sum+p.hours,0);
    return {id:u.id,name:u.name,preferredName:u.preferred_name||'',birthDate:u.birth_date||'',enabled:flag?.enabled!==0,payType:u.pay_type==='SALARY'?'SALARY':'HOURLY',totals,requests,approvedPto,punches};
   });
-  return result({week,sunday,today,employees:employeeData});
+  // Presence comes from the latest actual punch, not the payroll week selected above.
+  // An unclosed punch from a prior workday is an exception, not a live attendance signal.
+  const latest=store.all("SELECT p.user_id,p.kind,p.at FROM punches p WHERE p.at=(SELECT MAX(p2.at) FROM punches p2 WHERE p2.user_id=p.user_id) ORDER BY p.at DESC");
+  const byEmployee=new Map(latest.map(p=>[p.user_id,p]));
+  const presence=users.map(u=>{
+   const last=byEmployee.get(u.id)||null;
+   const todayPunch=last&&store.date(last.at)===today;
+   const status=last?.kind==='IN'?(todayPunch?'in':'review'):'out';
+   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',status,lastKind:last?.kind||null,lastAt:last?.at||null};
+  });
+  return result({week,sunday,today,employees:employeeData,presence,asOf:new Date().toISOString()});
  }
  if(route==='/api/admin/roster-import'&&method==='POST'){
   const data=await request.json();
