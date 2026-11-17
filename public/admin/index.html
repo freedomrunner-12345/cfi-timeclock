@@ -188,7 +188,7 @@ function presenceHtml(){
   +'<p class="muted small" style="margin:12px 0 0">Based on saved punches · Updated '+(state.asOf?time(state.asOf):'when refreshed')+'</p></section>';
 }
 async function refreshPresence(quiet=false){if(document.hidden||!document.querySelector('.presence-panel'))return;try{const next=await api('state'+(week?'?week='+week:''));if(!document.querySelector('.presence-panel'))return;state.presence=next.presence;state.asOf=next.asOf;const panel=document.querySelector('.presence-panel');panel.outerHTML=presenceHtml();document.getElementById('refreshPresence').onclick=()=>refreshPresence(false)}catch(e){if(!quiet)alertUser('Unable to refresh attendance: '+e.message)}}
-setInterval(()=>{if(state&&document.querySelector('.presence-panel'))refreshPresence(true)},30000);
+// Attendance refreshes only on an intentional button press or admin page load. No background polling.
 
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
 function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.payType==='SALARY'?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
