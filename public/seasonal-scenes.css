@@ -96,3 +96,102 @@
 [data-theme="patriotic"] .scene-burst:nth-child(2n)>b{background:linear-gradient(#ed5670,transparent)}
 [data-theme="patriotic"] .scene-burst:nth-child(3n)>b{background:linear-gradient(#d1e5ff,transparent)}
 @media(prefers-reduced-motion:reduce){.season-scene *, .season-scene *:before,.season-scene *:after{animation:none!important;transition:none!important}}
+
+
+/* Open-source Lucide SVG art replaces generic CSS blobs and triangle trees.
+   The scene remains decorative, locally hosted, with zero runtime network dependencies. */
+:is(.welcome-touch,.theme-stage) .scene-forest{position:absolute;inset:0;display:block;pointer-events:none}
+:is(.welcome-touch,.theme-stage) .scene-forest-tree{
+ position:absolute;display:block;bottom:2%;width:22%;height:42%;
+ background:url('/seasonal-assets/tree-pine.svg') center bottom/contain no-repeat;
+ opacity:.8;filter:drop-shadow(0 4px 12px #0525226b)
+}
+.scene-forest-tree.forest-1{left:-4%;height:50%;opacity:.84}
+.scene-forest-tree.forest-2{left:8%;height:31%;opacity:.52}
+.scene-forest-tree.forest-3{left:21%;height:19%;opacity:.24}
+.scene-forest-tree.forest-4{right:-4%;height:52%;opacity:.86}
+.scene-forest-tree.forest-5{right:9%;height:34%;opacity:.58}
+.scene-forest-tree.forest-6{right:22%;height:20%;opacity:.25}
+[data-theme="winter"] .scene-forest-tree{filter:brightness(.76) hue-rotate(34deg) drop-shadow(0 5px 11px #071a3166)}
+[data-theme="winterlights"] .scene-forest-tree{filter:drop-shadow(0 1px 8px #8ee0a921)}
+/* Snowflakes: actual six-armed SVG crystals, not elongated drops or glowing bars. */
+:is(.welcome-touch,.theme-stage) .scene-snow{
+ top:-12%;width:var(--flake-size)!important;height:var(--flake-size)!important;
+ min-width:0;min-height:0;left:var(--x);
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ background:transparent url('/seasonal-assets/snowflake.svg') center/contain no-repeat!important;
+ opacity:.73;filter:drop-shadow(0 0 1px #ffffff55);
+ animation:scene-real-snow var(--speed) linear var(--delay) infinite!important;
+ will-change:transform
+}
+:is(.welcome-touch,.theme-stage) .scene-snow:nth-child(3n){
+ width:calc(var(--flake-size)*.63)!important;height:calc(var(--flake-size)*.63)!important;opacity:.44
+}
+@keyframes scene-real-snow{
+ 0%{transform:translate3d(-8px,0,0) rotate(-14deg)}
+ 50%{transform:translate3d(17px,57cqh,0) rotate(18deg)}
+ 100%{transform:translate3d(var(--sway),125cqh,0) rotate(38deg)}
+}
+/* Vary foreground focus without warping icon shapes. */
+:is(.welcome-touch,.theme-stage) .scene-snow:nth-child(5n){opacity:.35;filter:blur(.6px)}
+:is(.welcome-touch,.theme-stage) .scene-leaf{
+ width:var(--flake-size)!important;height:var(--flake-size)!important;
+ border-radius:0!important;border:0!important;box-shadow:none!important;
+ background:transparent url('/seasonal-assets/leaf.svg') center/contain no-repeat!important;
+ filter:drop-shadow(0 0 3px #f8b45455)
+}
+:is(.welcome-touch,.theme-stage) .scene-petal{
+ width:var(--flake-size)!important;height:var(--flake-size)!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ background:transparent url('/seasonal-assets/flower-2.svg') center/contain no-repeat!important;
+ opacity:.7
+}
+:is(.welcome-touch,.theme-stage) .scene-burst{
+ width:clamp(30px,8cqw,74px);height:clamp(30px,8cqw,74px);
+ background:transparent url('/seasonal-assets/sparkles.svg') center/contain no-repeat;
+ filter:drop-shadow(0 0 8px #f9ce8477);transform-origin:center
+}
+:is(.welcome-touch,.theme-stage) .scene-burst>b{display:none}
+[data-theme="patriotic"] .scene-burst:nth-child(2n){filter:hue-rotate(95deg) drop-shadow(0 0 7px #c9e7ff)}
+[data-theme="patriotic"] .scene-burst:nth-child(3n){filter:hue-rotate(270deg) drop-shadow(0 0 7px #f09baa)}
+:is(.welcome-touch,.theme-stage) .scene-star{
+ width:var(--flake-size);height:var(--flake-size);
+ background:transparent url('/seasonal-assets/star.svg') center/contain no-repeat;
+ border-radius:0;box-shadow:none
+}
+[data-theme="winterlights"] .scene-snowbank{background:linear-gradient(180deg,#e1efd22e,#5679591b)}
+/* Keep the visual treatment subdued behind the actual clock and button. */
+:is(.welcome-touch,.theme-stage) .season-scene{opacity:.86}
+@media(prefers-reduced-motion:reduce){
+ :is(.welcome-touch,.theme-stage) .season-scene *,
+ :is(.welcome-touch,.theme-stage) .season-scene *::before,
+ :is(.welcome-touch,.theme-stage) .season-scene *::after{animation:none!important;will-change:auto!important}
+}
+
+
+/* Specific seasonal illustrations using the same locally licensed SVG artwork. */
+:is(.welcome-touch,.theme-stage) .scene-harvest{
+ bottom:3%;left:6%;width:23%;height:30%;display:block;
+ background:transparent url('/seasonal-assets/wheat.svg') center bottom/contain no-repeat;
+ opacity:.64;filter:drop-shadow(0 0 17px #edb56a38)
+}
+:is(.welcome-touch,.theme-stage) .scene-harvest i{display:none}
+:is(.welcome-touch,.theme-stage) .scene-moon{
+ width:clamp(60px,15cqw,170px);height:auto;aspect-ratio:1;
+ background:transparent url('/seasonal-assets/moon.svg') center/contain no-repeat;
+ box-shadow:none;filter:drop-shadow(0 0 22px #f9ba6780);opacity:.8
+}
+:is(.welcome-touch,.theme-stage) .scene-sunset{
+ width:clamp(60px,18cqw,190px);height:auto;aspect-ratio:1;
+ background:transparent url('/seasonal-assets/sun.svg') center/contain no-repeat;
+ box-shadow:none;filter:drop-shadow(0 0 26px #ffc16d77);opacity:.76
+}
+:is(.welcome-touch,.theme-stage) .scene-branch{
+ width:28%;height:38%;right:0%;bottom:5%;transform:rotate(-12deg);
+ border:0;border-radius:0;opacity:.5;
+ background:transparent url('/seasonal-assets/flower-2.svg') center/contain no-repeat
+}
+:is(.welcome-touch,.theme-stage) .scene-bats i{
+ background:transparent url('/seasonal-assets/ghost.svg') center/contain no-repeat;
+ width:25px;height:25px;opacity:.65;box-shadow:none
+}

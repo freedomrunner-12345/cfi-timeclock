@@ -280,6 +280,13 @@ function openThemePreview(theme){
   +'<div class="theme-preview-footer"><div><h2>'+t.name+'</h2><span class="muted small">Live-style welcome screen preview</span></div>'
   +'<div class="theme-preview-controls"><button type="button" class="btn outline" id="themePreviewClose">Close Preview</button>'
   +'<button type="button" class="btn red" id="themePreviewActivate" '+(automatic?'disabled title="Disable Automatic schedule first"':'')+'>Activate Theme</button></div></div></div>');
+ // The generic modal helper adds its own Close button; use only the preview's button.
+ const genericClose=$('cancel');
+ if(genericClose){
+  const genericDivider=genericClose.previousElementSibling;
+  if(genericDivider?.classList.contains('sep'))genericDivider.remove();
+  genericClose.remove();
+ }
  const close=$('themePreviewClose');if(close)close.onclick=hide;
  const activate=$('themePreviewActivate');
  if(activate)activate.onclick=async()=>{

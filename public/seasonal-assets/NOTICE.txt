@@ -1,0 +1,11 @@
+Seasonal screen decorative icon assets
+===================================
+The SVG icon files in this directory are adapted from Lucide Icons:
+https://github.com/lucide-icons/lucide
+Copyright (c) Lucide Icons and Contributors.
+Licensed under the ISC License.
+https://lucide.dev/license
+
+The asset copies retain their original geometry; colors and stroke weights
+were adjusted for CFI's seasonal scene artwork. The icons are served locally
+with the time-clock site, without a third-party runtime dependency.
