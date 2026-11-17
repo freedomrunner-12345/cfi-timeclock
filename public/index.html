@@ -431,6 +431,9 @@ body.employee-clocked-in{
  background-attachment:fixed;
 }
 main.signed-in-mode.clocked-in{background:transparent}
+/* Small employee identifier directly below the signed-in first name. */
+.signed-in-mode .employee-id-caption{margin-top:7px;font-size:clamp(14px,3.6vw,16px);font-weight:500;letter-spacing:0;color:#67707a;line-height:1.35;text-align:center}
+.signed-in-mode .employee-id-caption strong{font-weight:750;color:#38424b;font-variant-numeric:tabular-nums}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
@@ -783,7 +786,7 @@ function render(){
    }).join('')+'</div></div>':'';
  const accessiblePunches=entries.map(p=>'<li>'+(p.kind==='IN'?'In':'Out')+' at '+fmt(p.at)+'</li>').join('');
  $('app').innerHTML='<div class="clock-home">'
-  +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">'+first+'</h1></header>'
+  +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">'+first+'</h1><div class="employee-id-caption">Paychex ID: <strong>'+escapeHTML(s.user.id)+'</strong></div></header>'
   +'<section class="primary-zone" aria-label="Clock Status"><div class="status-line"><span class="entry-dot '+(on?'':'out')+'"></span>'+(on?'Clocked In':'Clocked Out')+'</div>'
   +'<button class="main-clock-button" id="punch" type="button"><span class="clock-arrow" aria-hidden="true">'+(on?'↑':'↓')+'</span>Clock '+(on?'Out':'In')+'</button>'
   +(last?'<div class="last-punch">'+(on?'Since ':last.kind==='IN'?'Last in ':'Last out ')+fmt(last.at)+'</div>':'')+'</section>'
