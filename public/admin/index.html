@@ -247,15 +247,10 @@ $('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">M
 $('refreshPresence').onclick=()=>refreshPresence(false);$('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
 const WELCOME_THEME_PRESETS=[
  {id:'classic',name:'Classic CFI',mid:'#38202e',bottom:'#101219',glow:'#bd3859',accent:'#bc1837'},
- {id:'winter',name:'Winter',mid:'#214d76',bottom:'#081426',glow:'#88d5f8',accent:'#9edcff'},
- {id:'spring',name:'Spring',mid:'#366b5a',bottom:'#142f32',glow:'#f7b3ab',accent:'#f5b8a4'},
- {id:'summer',name:'Summer',mid:'#155d76',bottom:'#10233e',glow:'#f6b465',accent:'#ffd193'},
- {id:'autumn',name:'Autumn',mid:'#70432e',bottom:'#201d27',glow:'#f49c4c',accent:'#efaa68'},
- {id:'thanksgiving',name:'Thanksgiving',mid:'#805030',bottom:'#29212a',glow:'#e4a15b',accent:'#ffd094'},
- {id:'halloween',name:'Halloween',mid:'#4a275f',bottom:'#120e1f',glow:'#ff8428',accent:'#ff9c43'},
- {id:'winterlights',name:'Winter Lights',mid:'#24473c',bottom:'#0e1c25',glow:'#f5c77d',accent:'#f1cd94'},
- {id:'newyear',name:'New Year',mid:'#32395d',bottom:'#0a1022',glow:'#edc477',accent:'#e8c77c'},
- {id:'patriotic',name:'Patriotic',mid:'#244a7f',bottom:'#10182d',glow:'#dd3c56',accent:'#e95b70'}
+ {id:'thanksgiving',name:'Thanksgiving',mid:'#74432d',bottom:'#211c27',glow:'#e7a053',accent:'#edb76f'},
+ {id:'christmas',name:'Christmas',mid:'#1a503d',bottom:'#0c1b24',glow:'#cb344c',accent:'#e3c77b'},
+ {id:'newyear',name:'New Year',mid:'#27354e',bottom:'#070e1d',glow:'#d8b97d',accent:'#eed49a'},
+ {id:'fourth',name:'Fourth of July',mid:'#31496e',bottom:'#152238',glow:'#bf3e46',accent:'#e6cf9e'}
 ];
 let themeSettings=null;
 function themeClockText(){
@@ -313,7 +308,7 @@ async function drawThemes(c){
 function renderThemePanel(c,active){
  const panel=c.querySelector('#themePanel');if(!panel)return;
  const mode=themeSettings?.mode||'manual';
- panel.innerHTML='<div class="theme-toolbar"><label class="theme-mode"><input id="themeAutomatic" type="checkbox" '+(mode==='automatic'?'checked':'')+'> Automatic seasonal schedule</label><span class="muted small">'+(mode==='automatic'?'December uses Winter Lights. Thanksgiving and New Year change automatically.':'Choose any theme and activate it.')+'</span></div>'
+ panel.innerHTML='<div class="theme-toolbar"><label class="theme-mode"><input id="themeAutomatic" type="checkbox" '+(mode==='automatic'?'checked':'')+'> Automatic holiday schedule</label><span class="muted small">'+(mode==='automatic'?'December uses Christmas; Thanksgiving, New Year and July Fourth switch automatically.':'Choose any theme and activate it.')+'</span></div>'
  +'<div class="theme-collection">'+WELCOME_THEME_PRESETS.map(t=>'<div class="theme-tile">'+themeStage(t.id)+'<div class="theme-info"><b>'+t.name+'</b>'+(t.id===active?'<span class="theme-active">Active</span>':'')+'</div><div class="theme-actions"><button type="button" class="btn outline" data-theme-preview="'+t.id+'">Preview</button><button type="button" class="btn '+(t.id===active?'outline':'red')+'" data-theme-activate="'+t.id+'" '+(mode==='automatic'?'disabled title="Switch off Automatic to choose a theme"':t.id===active?'disabled':'')+'>'+(t.id===active?'Active':'Activate')+'</button></div></div>').join('')+'</div>';
  panel.querySelector('#themeAutomatic').onchange=async e=>{
   const checkbox=e.currentTarget,desired=checkbox.checked?'automatic':'manual';checkbox.disabled=true;
