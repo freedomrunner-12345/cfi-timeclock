@@ -28,5 +28,15 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "previews": {
+    "durable_objects": {
+      "bindings": [
+        {
+          "name": "CLOCK",
+          "class_name": "Timeclock"
+        }
+      ]
+    }
   }
 }
