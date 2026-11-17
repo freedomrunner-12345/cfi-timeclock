@@ -11,15 +11,15 @@
  const burst=Array.from({length:7},(_,i)=>'<i class="scene-burst burst-'+(i+1)+'"><b></b><b></b><b></b><b></b></i>').join('');
  const scenes={
   classic:'',
-  winter:'<div class="scene-snowbank"></div>'+pines(3)+items(22,'scene-snow'),
-  winterlights:'<div class="scene-snowbank"></div>'+pines(3)+'<div class="scene-lights">'+lights+'</div>'+items(19,'scene-snow')+items(6,'scene-gold'),
-  thanksgiving:'<div class="scene-hills"></div><div class="scene-harvest"><i></i><i></i><i></i></div>'+items(14,'scene-leaf'),
-  autumn:'<div class="scene-hills"></div>'+items(13,'scene-leaf'),
-  newyear:'<div class="scene-skyline"></div>'+burst+items(12,'scene-gold'),
-  spring:'<div class="scene-branch"></div>'+items(17,'scene-petal'),
-  summer:'<div class="scene-sunset"></div><div class="scene-hills"></div>'+items(15,'scene-firefly'),
-  halloween:'<div class="scene-moon"></div><div class="scene-hills"></div><div class="scene-bats"><i></i><i></i><i></i></div>'+items(7,'scene-mist'),
-  patriotic:'<div class="scene-skyline"></div>'+burst+items(11,'scene-star')
+  winter:'<span class="scene-snowbank"></span>'+pines(3)+items(22,'scene-snow'),
+  winterlights:'<span class="scene-snowbank"></span>'+pines(3)+'<span class="scene-lights">'+lights+'</span>'+items(19,'scene-snow')+items(6,'scene-gold'),
+  thanksgiving:'<span class="scene-hills"></span><span class="scene-harvest"><i></i><i></i><i></i></span>'+items(14,'scene-leaf'),
+  autumn:'<span class="scene-hills"></span>'+items(13,'scene-leaf'),
+  newyear:'<span class="scene-skyline"></span>'+burst+items(12,'scene-gold'),
+  spring:'<span class="scene-branch"></span>'+items(17,'scene-petal'),
+  summer:'<span class="scene-sunset"></span><span class="scene-hills"></span>'+items(15,'scene-firefly'),
+  halloween:'<span class="scene-moon"></span><span class="scene-hills"></span><span class="scene-bats"><i></i><i></i><i></i></span>'+items(7,'scene-mist'),
+  patriotic:'<span class="scene-skyline"></span>'+burst+items(11,'scene-star')
  };
  const allowed=Object.keys(scenes);
  window.CFIThemeScene={
