@@ -392,6 +392,38 @@ main.signed-in-mode.clocked-in{background:linear-gradient(180deg,#e4f5e9 0%,#edf
 .signed-in-mode.clocked-out .main-clock-button:focus-visible{outline-color:#148454}
 .signed-in-mode.clocked-in .main-clock-button{background:#b81025}
 .signed-in-mode.clocked-in .main-clock-button:active{background:#a40c20}
+
+/* Employee dashboard: strong visual status with minimal copy. */
+main.signed-in-mode.clocked-in{background:linear-gradient(180deg,#c3ebd1 0%,#d8f2e1 54%,#e6f7ec 100%)}
+body.employee-clocked-in{background:#d8f2e1}
+.signed-in-mode.clocked-in .primary-zone{background:#effcf3;border:2px solid #5dbd83;box-shadow:0 14px 36px #11734124}
+.signed-in-mode .status-line{display:flex;justify-content:center;align-items:center;gap:10px;padding:11px 20px;border-radius:15px;width:100%;font-size:clamp(19px,4.8vw,25px);font-weight:850;letter-spacing:.015em;line-height:1.18;margin-bottom:19px}
+.signed-in-mode.clocked-in .status-line{background:#188551;color:white}
+.signed-in-mode.clocked-in .status-line .entry-dot{background:#fff;box-shadow:0 0 0 4px #ffffff20}
+.signed-in-mode.clocked-out .status-line{background:#eceef2;color:#535862}
+.signed-in-mode.clocked-out .status-line .entry-dot{background:#87909a}
+.signed-in-mode .employee-greeting{margin-bottom:19px}
+.signed-in-mode .employee-greeting .hello{margin:0;font-size:clamp(37px,8vw,49px);line-height:1.1;letter-spacing:-.05em}
+.signed-in-mode .employee-greeting .eyebrow{font-size:15px;letter-spacing:.075em;margin-bottom:9px}
+.signed-in-mode .primary-zone{padding:21px 20px 19px}
+.signed-in-mode .last-punch{font-size:16px;margin-top:13px;color:#626b70}
+.signed-in-mode .daily-section{margin-top:24px}
+.signed-in-mode .quiet-heading{font-size:19px;color:#5b626a;margin-bottom:5px}
+.signed-in-mode .punch-timeline{height:109px}
+.signed-in-mode .timeline-label{top:74px;gap:2px}
+.signed-in-mode .timeline-kind{font-size:11px}
+.signed-in-mode .timeline-label strong{font-size:clamp(12px,3vw,16px)}
+.signed-in-mode .clock-home .option-actions{margin-top:20px;gap:11px}
+.signed-in-mode .clock-home .option-button{min-height:72px;font-size:15px;background:#ffffff85!important;color:#535a62!important;border:1px solid #b5bac033!important}
+.signed-in-mode .clock-home .option-button svg{width:19px;height:19px}
+.signed-in-mode .clock-home .questions-clock{margin-top:6px}
+.signed-in-mode .clock-home .questions-link{color:#7c6570;font-size:15px;font-weight:650;min-height:37px}
+.signed-in-mode #app .session-controls{margin-top:6px}
+.signed-in-mode #app .session-controls #signout{min-width:142px!important;min-height:40px!important;padding:6px 15px!important;font-size:15px!important;border:1.5px solid #ae8d99!important;box-shadow:none!important;background:#ffffff8a!important;color:#8a334b!important}
+.signed-in-mode #app .session-controls #inactivity{font-size:12px;color:#7e8790}
+.signed-in-mode #app .session-controls .inactivity-label{font-size:12px;color:#7e8790}
+.signed-in-mode #app .session-controls #inactivity{margin-top:6px!important}
+@media(max-height:790px){.signed-in-mode .employee-greeting{margin-bottom:12px}.signed-in-mode .primary-zone{padding:16px 16px 15px}.signed-in-mode .status-line{margin-bottom:13px}.signed-in-mode .main-clock-button{min-height:75px}.signed-in-mode .daily-section{margin-top:15px}.signed-in-mode .clock-home .option-actions{margin-top:12px}.signed-in-mode .clock-home .option-button{min-height:62px}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
@@ -701,10 +733,10 @@ function render(){
    }).join('')+'</div></div>':'';
  const accessiblePunches=entries.map(p=>'<li>'+(p.kind==='IN'?'In':'Out')+' at '+fmt(p.at)+'</li>').join('');
  $('app').innerHTML='<div class="clock-home">'
-  +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">Welcome Back, '+first+'.</h1><div class="employee-id-hint">Your Paychex Employee ID: <strong>'+escapeHTML(s.user.id)+'</strong></div></header>'
-  +'<section class="primary-zone" aria-label="Clock Status"><div class="status-line"><span class="entry-dot '+(on?'':'out')+'"></span>'+(on?'Currently Clocked In':'Currently Clocked Out')+'</div>'
+  +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">'+first+'</h1></header>'
+  +'<section class="primary-zone" aria-label="Clock Status"><div class="status-line"><span class="entry-dot '+(on?'':'out')+'"></span>'+(on?'Clocked In':'Clocked Out')+'</div>'
   +'<button class="main-clock-button" id="punch" type="button"><span class="clock-arrow" aria-hidden="true">'+(on?'↑':'↓')+'</span>Clock '+(on?'Out':'In')+'</button>'
-  +(last?'<div class="last-punch">Last '+(last.kind==='IN'?'In':'Out')+' · '+fmt(last.at)+'</div>':'')+'</section>'
+  +(last?'<div class="last-punch">'+(on?'Since ':last.kind==='IN'?'Last in ':'Last out ')+fmt(last.at)+'</div>':'')+'</section>'
   +'<section class="daily-section" aria-label="Today’s Punches"><h2 class="quiet-heading">Today’s Punches</h2>'
   +(count?timeline+'<ul class="visually-hidden" aria-label="Punch times">'+accessiblePunches+'</ul>':'<div class="empty">No Punches Yet</div>')+'</section>'
   +'<div class="option-actions" aria-label="More Actions">'
