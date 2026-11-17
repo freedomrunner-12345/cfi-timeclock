@@ -1,92 +1,193 @@
-/* Five holiday-only idle clock themes. All decor is static markup and CSS.
-   Assets are local, motion is optional, and the kiosk clock stays readable. */
-:is(.welcome-touch,.theme-stage){position:relative;isolation:isolate;overflow:hidden;color:white}
+/* CFI welcome themes — carefully constrained, SVG-backed decor only.
+   The same stylesheet drives the idle kiosk and the full-size admin preview. */
+:is(.welcome-touch,.theme-stage){position:relative;isolation:isolate;overflow:hidden;color:#fff}
+:is(.welcome-touch,.theme-stage)[data-theme="classic"]{
+ --accent:#c31135;
+ background:
+  radial-gradient(ellipse at 83% 12%,#9d25403b 0%,transparent 40%),
+  radial-gradient(ellipse at 7% 91%,#cfb9cc1d 0%,transparent 43%),
+  radial-gradient(ellipse at 53% 39%,#34202c 0%,#1c1922 51%,#0b0d11 100%)!important;
+ color:#fff!important
+}
+/* Fix the previous nearly white/blank Classic CFI admin card. */
+.theme-stage[data-theme="classic"] .preview-title,
+.theme-stage[data-theme="classic"] .preview-time,
+.theme-stage[data-theme="classic"] .preview-date{color:#fff!important;opacity:1}
+.theme-stage[data-theme="classic"] .preview-rule{background:#c31135!important;box-shadow:0 0 12px #b8102577}
 :is(.welcome-touch,.theme-stage)[data-theme="thanksgiving"]{
- --accent:#edb76f;background:radial-gradient(ellipse at 50% 38%,#74432d 0%,#482b29 48%,#211c27 100%)!important}
+ --accent:#efbd79;
+ background:
+  radial-gradient(ellipse at 18% 80%,#ac68343b,transparent 44%),
+  radial-gradient(ellipse at 78% 18%,#b8615430,transparent 38%),
+  linear-gradient(147deg,#543028 0%,#42272a 47%,#211a22 100%)!important
+}
 :is(.welcome-touch,.theme-stage)[data-theme="christmas"]{
- --accent:#e3c77b;background:radial-gradient(ellipse at 50% 37%,#1a503d 0%,#10392f 49%,#0c1b24 100%)!important}
+ --accent:#d9b86c;
+ background:
+  radial-gradient(ellipse at 77% 11%,#a4273640,transparent 38%),
+  radial-gradient(ellipse at 8% 80%,#2f856038,transparent 40%),
+  linear-gradient(151deg,#174c3b 0%,#0d322c 52%,#101d24 100%)!important
+}
 :is(.welcome-touch,.theme-stage)[data-theme="newyear"]{
- --accent:#eed49a;background:radial-gradient(ellipse at 52% 37%,#27354e 0%,#111b31 54%,#070e1d 100%)!important}
+ --accent:#ebd39d;
+ background:
+  radial-gradient(ellipse at 16% 14%,#9e7b4538,transparent 43%),
+  radial-gradient(ellipse at 88% 84%,#a6a0a12b,transparent 40%),
+  linear-gradient(160deg,#192e40,#101c2a 58%,#0a121d)!important
+}
 :is(.welcome-touch,.theme-stage)[data-theme="fourth"]{
- --accent:#e6cf9e;background:radial-gradient(ellipse at 50% 40%,#31496e 0%,#1b3458 50%,#152238 100%)!important}
+ --accent:#e3d4ab;
+ background:
+  radial-gradient(ellipse at 90% 10%,#b43f4b38,transparent 39%),
+  radial-gradient(ellipse at 10% 92%,#aebdd631,transparent 44%),
+  linear-gradient(160deg,#25466d,#172f4b 56%,#101e32)!important
+}
 :is(.welcome-touch,.theme-stage) .season-scene{
- position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;container-type:size;display:block;opacity:.93
+ position:absolute;inset:0;display:block;z-index:0;overflow:hidden;
+ pointer-events:none;container-type:size;opacity:1
 }
 :is(.welcome-touch,.theme-stage) .season-scene *, :is(.welcome-touch,.theme-stage) .season-scene *::before{
  box-sizing:border-box;pointer-events:none
 }
-.theme-stage .preview-center, .theme-stage .preview-prompt,
-.welcome-touch .welcome-center,.welcome-touch .welcome-prompt{z-index:2;position:relative}
+.theme-stage .preview-center,.theme-stage .preview-prompt,
+.welcome-touch .welcome-center,.welcome-touch .welcome-prompt{
+ position:relative;z-index:2
+}
+/* Idle screen's old generic color glows should never cover themed art. */
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::before,
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::after,
-:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .ambient{display:none}
+:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .ambient{display:none!important}
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .welcome-rule,
-.theme-stage[data-theme]:not([data-theme="classic"]) .preview-rule{background:var(--accent)!important;box-shadow:0 0 16px #ffffff29}
+.theme-stage[data-theme]:not([data-theme="classic"]) .preview-rule{
+ background:var(--accent)!important;box-shadow:0 0 13px #ffffff26
+}
 .scene-particle{position:absolute;display:block;left:var(--x);top:-12%;animation-delay:var(--delay);animation-duration:var(--speed)}
-/* Christmas: emerald and cranberry highlights, warm string lights, snow, evergreens. */
-.scene-forest{position:absolute;inset:0}
-.scene-forest-tree{position:absolute;bottom:2%;width:24%;height:45%;background:url('/seasonal-assets/tree-pine.svg') center bottom/contain no-repeat;filter:brightness(.64) saturate(1.2);opacity:.7}
-.forest-1{left:-4%;height:52%;opacity:.75}
-.forest-2{left:9%;height:35%;opacity:.5}
-.forest-3{left:22%;height:20%;opacity:.28}
-.forest-4{right:-4%;height:56%;opacity:.82}
-.forest-5{right:10%;height:36%;opacity:.52}
-.forest-6{right:23%;height:20%;opacity:.25}
-.scene-snowbank{position:absolute;bottom:-12%;left:-10%;width:120%;height:28%;border-radius:50% 50% 0 0;background:linear-gradient(180deg,#def0e925,#9ac9b416)}
-.scene-snow{width:var(--flake-size);height:var(--flake-size);background:url('/seasonal-assets/snowflake.svg') center/contain no-repeat;opacity:.7;animation-name:holiday-snowfall;animation-timing-function:linear;animation-iteration-count:infinite}
-.scene-snow:nth-child(3n){width:calc(var(--flake-size)*.65);height:calc(var(--flake-size)*.65);opacity:.4}
-.scene-snow:nth-child(5n){filter:blur(.5px)}
-@keyframes holiday-snowfall{0%{transform:translate3d(-8px,0,0) rotate(-12deg)}50%{transform:translate3d(12px,55cqh,0) rotate(15deg)}100%{transform:translate3d(var(--sway),125cqh,0) rotate(40deg)}}
-.scene-lights{position:absolute;left:1%;top:-6%;height:23%;width:98%;border-bottom:2px solid #ecd39475;border-radius:0 0 50% 50%;transform:rotate(-1deg)}
-.scene-bulb{position:absolute;display:block;width:clamp(5px,1cqw,11px);height:clamp(5px,1cqw,11px);border-radius:50%;background:#f2c66a;box-shadow:0 0 11px 4px #f9cd7580;animation:holiday-light-pulse 3s ease-in-out infinite alternate}
-.scene-bulb:nth-child(2n){background:#e8a2a0;box-shadow:0 0 10px 4px #bd344b75;animation-delay:-1.2s}
-.scene-bulb:nth-child(3n){background:#f8f1d8;box-shadow:0 0 10px 4px #e8fbd077;animation-delay:-2s}
-.scene-bulb:nth-child(1){left:0%;top:40%}
-.scene-bulb:nth-child(2){left:8%;top:52.423314164920995%}
-.scene-bulb:nth-child(3){left:16%;top:64%}
-.scene-bulb:nth-child(4){left:24%;top:73.94112549695427%}
-.scene-bulb:nth-child(5){left:32%;top:81.56921938165306%}
-.scene-bulb:nth-child(6){left:40%;top:86.36443966187528%}
-.scene-bulb:nth-child(7){left:48%;top:88%}
-.scene-bulb:nth-child(8){left:56%;top:86.36443966187528%}
-.scene-bulb:nth-child(9){left:64%;top:81.56921938165306%}
-.scene-bulb:nth-child(10){left:72%;top:73.94112549695429%}
-.scene-bulb:nth-child(11){left:80%;top:64%}
-.scene-bulb:nth-child(12){left:88%;top:52.42331416492101%}
-.scene-bulb:nth-child(13){left:96%;top:40.00000000000001%}
-@keyframes holiday-light-pulse{from{opacity:.45;transform:scale(.78)}to{opacity:1;transform:scale(1.12)}}
-/* Thanksgiving: a recognizable turkey, with varied red/amber/yellow foliage. */
-.holiday-thanksgiving-land{position:absolute;inset:auto -15% -15%;height:34%;background:radial-gradient(ellipse at 50% 100%,#ad713936,transparent 73%)}
-.holiday-turkey{position:absolute;right:5%;bottom:5%;width:clamp(90px,20cqw,220px);height:clamp(105px,32cqh,260px);background:url('/seasonal-assets/turkey.svg') center bottom/contain no-repeat;filter:drop-shadow(0 9px 24px #1e13147d);opacity:.88}
-.scene-leaf{width:var(--flake-size);height:var(--flake-size);background:url('/seasonal-assets/leaf.svg') center/contain no-repeat;animation:holiday-leaf-fall var(--speed) linear var(--delay) infinite}
-.scene-leaf.tone-0{filter:sepia(.75) saturate(2) hue-rotate(-17deg) brightness(1.25)}
-.scene-leaf.tone-1{filter:sepia(.5) saturate(2.5) hue-rotate(-36deg) brightness(1.08)}
-.scene-leaf.tone-2{filter:sepia(.9) saturate(1.7) hue-rotate(14deg) brightness(1.3)}
-.scene-leaf.tone-3{filter:sepia(.8) saturate(2) hue-rotate(-52deg) brightness(.94)}
-.scene-leaf.tone-4{filter:sepia(.7) saturate(1.3) hue-rotate(33deg) brightness(1.35)}
-@keyframes holiday-leaf-fall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(30px,58cqh,0) rotate(185deg)}100%{transform:translate3d(-25px,120cqh,0) rotate(375deg)}}
-/* New Year: actual decorative starburst fireworks, champagne light, no skyline blocks. */
-.holiday-city-haze{position:absolute;left:-10%;right:-10%;bottom:-10%;height:35%;background:radial-gradient(ellipse at 50% 100%,#d2b57e32,transparent 65%)}
-.holiday-bursts{position:absolute;inset:0}
-.holiday-burst{position:absolute;display:block;left:12%;top:18%;width:clamp(62px,16cqw,165px);aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(from 0deg,transparent 0deg 11deg,#eecf86 12deg 14deg,transparent 15deg 30deg);-webkit-mask:radial-gradient(circle,transparent 0 17%,#000 18% 78%,transparent 79%);mask:radial-gradient(circle,transparent 0 17%,#000 18% 78%,transparent 79%);filter:drop-shadow(0 0 12px #eecf86);opacity:.74;animation:holiday-firework 5.5s ease-in-out infinite}
-.holiday-burst.burst-2{left:70%;top:13%;width:clamp(62px,15cqw,155px);animation-delay:-1.6s}
-.holiday-burst.burst-3{left:75%;top:59%;width:clamp(38px,9cqw,98px);animation-delay:-3.1s}
-.holiday-burst.burst-4{left:8%;top:61%;width:clamp(39px,10cqw,105px);animation-delay:-4.3s}
-.holiday-burst.burst-5{left:54%;top:6%;width:clamp(36px,8cqw,90px);animation-delay:-2.5s}
-@keyframes holiday-firework{0%,100%{opacity:.28;transform:scale(.68) rotate(-8deg)}42%{opacity:.85;transform:scale(1.05) rotate(10deg)}72%{opacity:.4;transform:scale(.9) rotate(16deg)}}
-.holiday-gold-dust{position:absolute;inset:0;background-image:radial-gradient(circle,#fff2c7 0 1px,transparent 2px),radial-gradient(circle,#dbc18d 0 1px,transparent 2px);background-position:0 0,38px 62px;background-size:89px 113px,133px 151px;opacity:.36}
-.scene-gold{width:4px;height:4px;border-radius:50%;background:#fff0b8;box-shadow:0 0 11px 3px #f9d38d80;animation:holiday-shimmer var(--speed) ease-in-out var(--delay) infinite alternate;top:var(--x)}
-@keyframes holiday-shimmer{from{opacity:.1;transform:translateY(9px) scale(.5)}to{opacity:.9;transform:translateY(-11px) scale(1.5)}}
-/* July Fourth: vintage flag bunting, ivory stars, muted red-white-blue accents. */
-.holiday-bunting{position:absolute;top:-1%;width:clamp(170px,31cqw,340px);height:clamp(94px,24cqh,215px);background:url('/seasonal-assets/americana-bunting.svg') center top/contain no-repeat;opacity:.94;filter:drop-shadow(0 9px 12px #071d3450)}
-.bunting-left{left:-5%;transform:rotate(-8deg)}
-.bunting-right{right:-5%;transform:rotate(8deg)}
-.holiday-flag-stars{position:absolute;inset:0;background-image:url('/seasonal-assets/star.svg');background-size:clamp(34px,7cqw,70px);opacity:.12;mask-image:linear-gradient(90deg,#000 0%,transparent 37%,transparent 63%,#000 100%)}
-[data-theme="fourth"] .holiday-burst{background:repeating-conic-gradient(from 0deg,transparent 0deg 10deg,#f8e7c7 11deg 13deg,transparent 14deg 30deg);opacity:.42}
-[data-theme="fourth"] .holiday-burst.burst-2,
-[data-theme="fourth"] .holiday-burst.burst-4{background:repeating-conic-gradient(from 0deg,transparent 0deg 11deg,#c95555 12deg 14deg,transparent 15deg 30deg)}
-.scene-star{width:var(--flake-size);height:var(--flake-size);background:url('/seasonal-assets/star.svg') center/contain no-repeat;opacity:.5;top:calc(12% + 15cqh);animation:holiday-shimmer var(--speed) ease-in-out var(--delay) infinite alternate}
-/* Accessibility, battery preservation and screenshots. */
+/* Thanksgiving: an actual full-color Microsoft Fluent turkey + varied leaves. */
+.holiday-leaf-glow{
+ position:absolute;left:-14%;bottom:-16%;width:128%;height:43%;
+ border-radius:50%;background:radial-gradient(ellipse at 50% 90%,#d3945945,transparent 68%)
+}
+.holiday-turkey{
+ position:absolute;right:5%;bottom:7%;
+ width:clamp(78px,21cqw,190px);aspect-ratio:1;
+ background:url('/seasonal-assets/fluent-turkey.svg') center/contain no-repeat;
+ filter:drop-shadow(0 8px 15px #100b0d80);opacity:.94
+}
+.scene-leaf{
+ width:var(--flake-size);height:var(--flake-size);
+ background:url('/seasonal-assets/fluent-fallen-leaf.svg') center/contain no-repeat;
+ opacity:.76;animation:holiday-leaf-fall var(--speed) linear var(--delay) infinite
+}
+.scene-leaf.tone-1,.scene-leaf.tone-4{
+ background-image:url('/seasonal-assets/fluent-maple-leaf.svg')
+}
+.scene-leaf.tone-2{background-image:url('/seasonal-assets/fluent-wind-leaf.svg');opacity:.58}
+.scene-leaf.tone-3{filter:hue-rotate(20deg) saturate(1.12)}
+@keyframes holiday-leaf-fall{
+ 0%{transform:translate3d(-11px,-5cqh,0) rotate(-12deg)}
+ 50%{transform:translate3d(24px,58cqh,0) rotate(170deg)}
+ 100%{transform:translate3d(var(--drift),120cqh,0) rotate(345deg)}
+}
+/* Christmas: genuine illustrated evergreen trees, string lights and gentle snow. */
+.holiday-tree{
+ position:absolute;bottom:4%;width:clamp(88px,22cqw,205px);aspect-ratio:1;
+ background:url('/seasonal-assets/fluent-christmas-tree.svg') center bottom/contain no-repeat;
+ filter:drop-shadow(0 7px 16px #021a1880);opacity:.9
+}
+.holiday-tree.tree-left{left:-3%;transform:rotate(-3deg)}
+.holiday-tree.tree-right{right:-3%;width:clamp(83px,20cqw,188px);opacity:.78;transform:rotate(4deg)}
+.holiday-snowbank{position:absolute;bottom:-11%;left:-10%;width:120%;height:28%;border-radius:50% 50% 0 0;background:linear-gradient(180deg,#f6fff420,#b8ddcd12)}
+.scene-snow{
+ width:var(--flake-size);height:var(--flake-size);
+ background:url('/seasonal-assets/snowflake.svg') center/contain no-repeat;
+ opacity:.6;animation:holiday-snowfall var(--speed) linear var(--delay) infinite
+}
+.scene-snow:nth-child(3n){width:calc(var(--flake-size)*.64);height:calc(var(--flake-size)*.64);opacity:.36}
+.scene-snow:nth-child(5n){filter:blur(.7px)}
+@keyframes holiday-snowfall{
+ 0%{transform:translate3d(-8px,-6cqh,0) rotate(-9deg)}
+ 50%{transform:translate3d(17px,57cqh,0) rotate(14deg)}
+ 100%{transform:translate3d(var(--drift),124cqh,0) rotate(34deg)}
+}
+.holiday-light-string{
+ position:absolute;top:-5%;left:2%;width:96%;height:24%;
+ border-bottom:2px solid #d4ae729c;border-radius:0 0 50% 50%;transform:rotate(-1deg)
+}
+.holiday-light{
+ position:absolute;display:block;width:clamp(5px,1.15cqw,11px);height:clamp(5px,1.15cqw,11px);
+ border-radius:50%;background:#ffe6a3;box-shadow:0 0 10px 4px #f7c47a7a;
+ animation:holiday-light-pulse 3s ease-in-out infinite alternate
+}
+.holiday-light:nth-child(2n){background:#e99091;box-shadow:0 0 10px 3px #d35c6367;animation-delay:-1.1s}
+.holiday-light:nth-child(3n){background:#e2f9db;box-shadow:0 0 9px 3px #daf2ac79;animation-delay:-1.9s}
+.holiday-light:nth-child(1){left:0%;top:42%}
+.holiday-light:nth-child(2){left:8%;top:53.12921893940839%}
+.holiday-light:nth-child(3){left:16%;top:63.5%}
+.holiday-light:nth-child(4){left:24%;top:72.40559159102153%}
+.holiday-light:nth-child(5){left:32%;top:79.23909236273086%}
+.holiday-light:nth-child(6){left:40%;top:83.53481053042994%}
+.holiday-light:nth-child(7){left:48%;top:85%}
+.holiday-light:nth-child(8){left:56%;top:83.53481053042994%}
+.holiday-light:nth-child(9){left:64%;top:79.23909236273087%}
+.holiday-light:nth-child(10){left:72%;top:72.40559159102155%}
+.holiday-light:nth-child(11){left:80%;top:63.5%}
+.holiday-light:nth-child(12){left:88%;top:53.1292189394084%}
+.holiday-light:nth-child(13){left:96%;top:42.00000000000001%}
+@keyframes holiday-light-pulse{from{opacity:.57;transform:scale(.88)}to{opacity:1;transform:scale(1.13)}}
+/* New Year: premium champagne illumination, open-source sparkle & popper illustrations. */
+.holiday-champagne-glow{
+ position:absolute;bottom:-25%;left:14%;width:72%;height:60%;
+ background:radial-gradient(ellipse,#bd976a3a,transparent 70%);filter:blur(20px)
+}
+.holiday-party-popper{
+ position:absolute;bottom:8%;right:7%;width:clamp(69px,18cqw,166px);aspect-ratio:1;
+ background:url('/seasonal-assets/fluent-party-popper.svg') center/contain no-repeat;
+ filter:drop-shadow(0 8px 15px #030b1770);opacity:.73
+}
+.holiday-glints{position:absolute;inset:0}
+.holiday-glint{
+ position:absolute;display:block;width:clamp(60px,16cqw,165px);aspect-ratio:1;
+ background:url('/seasonal-assets/fluent-sparkles.svg') center/contain no-repeat;
+ filter:drop-shadow(0 0 15px #ffe1a87c);opacity:.58;
+ animation:holiday-twinkle 5.5s ease-in-out infinite alternate
+}
+.glint-1{left:5%;top:12%}.glint-2{right:6%;top:8%;width:clamp(48px,12cqw,126px);animation-delay:-2s}
+.glint-3{left:8%;bottom:9%;width:clamp(36px,9cqw,102px);animation-delay:-3.4s}
+.glint-4{right:17%;bottom:21%;width:clamp(26px,7cqw,80px);opacity:.33;animation-delay:-1.4s}
+@keyframes holiday-twinkle{0%{opacity:.22;transform:scale(.9) rotate(-4deg)}100%{opacity:.69;transform:scale(1.08) rotate(5deg)}}
+.scene-confetti{
+ width:clamp(3px,.5cqw,6px);height:clamp(3px,.5cqw,6px);
+ background:#d3b87f;border-radius:50%;box-shadow:0 0 6px #f3d59e7a;opacity:.6;
+ animation:holiday-confetti var(--speed) ease-in-out var(--delay) infinite alternate
+}
+.scene-confetti.tone-1{background:#f9e9bf}.scene-confetti.tone-2{background:#ced9d8}
+.scene-confetti.tone-3{background:#c29566}
+@keyframes holiday-confetti{0%{transform:translateY(15cqh);opacity:.2}100%{transform:translate3d(var(--drift),98cqh,0);opacity:.66}}
+/* Independence Day: a real 50-star American flag, not a drawn substitute. */
+.holiday-flag{
+ position:absolute;right:5%;bottom:8%;
+ width:clamp(114px,31cqw,330px);aspect-ratio:4/3;
+ background:url('/seasonal-assets/us-flag.svg') center/contain no-repeat;
+ border:2px solid #f7f0e2;border-radius:2px;
+ transform:rotate(-5deg);
+ box-shadow:0 13px 30px #061528ae,0 0 0 5px #d9e0e61a;
+ opacity:.97
+}
+.holiday-flag-halo{position:absolute;right:-12%;bottom:-22%;height:61%;width:70%;background:radial-gradient(ellipse,#b7434a22,transparent 70%)}
+[data-theme="fourth"] .holiday-glint{filter:drop-shadow(0 0 9px #e8e1d6a0);opacity:.32}
+[data-theme="fourth"] .glint-1{left:7%;top:15%;width:clamp(32px,8cqw,95px)}
+[data-theme="fourth"] .glint-2{right:19%;top:8%;width:clamp(30px,8cqw,85px)}
+[data-theme="fourth"] .glint-3,[data-theme="fourth"] .glint-4{display:none}
+.scene-star{
+ width:var(--flake-size);height:var(--flake-size);
+ background:url('/seasonal-assets/star.svg') center/contain no-repeat;opacity:.3;
+ animation:holiday-star-fade var(--speed) ease-in-out var(--delay) infinite alternate
+}
+.scene-star.tone-2{opacity:.55}
+@keyframes holiday-star-fade{from{transform:translateY(10cqh);opacity:.1}to{transform:translate3d(var(--drift),94cqh,0);opacity:.45}}
+/* All graphics noninteractive; smooth enough for kiosk tablets, freeze on reduced motion. */
 @media(prefers-reduced-motion:reduce){
- .season-scene *,.season-scene *::before,.season-scene *::after{animation:none!important;transition:none!important}
+ .season-scene *,.season-scene *::before,.season-scene *::after{
+  animation:none!important;transition:none!important;will-change:auto!important
+ }
 }
