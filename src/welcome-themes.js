@@ -1,6 +1,6 @@
 // Theme settings are isolated from payroll tables and punch history.
 export const WELCOME_THEMES = Object.freeze([
- 'classic','winter','spring','summer','autumn','thanksgiving','halloween','christmas','newyear','patriotic'
+ 'classic','winter','spring','summer','autumn','thanksgiving','halloween','winterlights','newyear','patriotic'
 ]);
 export const DEFAULT_WELCOME_THEME = 'classic';
 export function validatedWelcomeTheme(value){
@@ -14,7 +14,7 @@ export function scheduledWelcomeTheme(date){
  const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
  const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));
  const year=Number(p.year),month=Number(p.month),day=Number(p.day);
- if(month===12)return 'christmas'; // All of December.
+ if(month===12)return 'winterlights'; // Festive, nonreligious December theme.
  if(month===1&&day<=7)return 'newyear';
  if(month===7&&day<=7)return 'patriotic';
  if(month===10)return 'halloween';
