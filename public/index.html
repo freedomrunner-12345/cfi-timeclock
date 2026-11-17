@@ -375,9 +375,20 @@ main.login-mode{height:100dvh;min-height:0!important;max-height:100dvh;overflow:
 .timeline-kind{font-size:13px;color:#858791;font-weight:600}
 .timeline-label strong{font-size:clamp(13px,3.25vw,17px);font-weight:750;color:#333640;font-variant-numeric:tabular-nums}
 @media(max-width:380px){.timeline-label strong{font-size:12px}.punch-timeline{height:118px}}
+/* Display-only clock on the existing welcome touch target. */
+.welcome-clock{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:clamp(28px,7vh,86px);font-variant-numeric:tabular-nums}
+.welcome-time{font-size:clamp(52px,11vw,88px);font-weight:790;letter-spacing:-.067em;line-height:1.05;color:#fff;white-space:nowrap}
+.welcome-date{font-size:clamp(16px,3.9vw,24px);font-weight:450;letter-spacing:-.025em;color:#e6dfe4}
+@media(max-height:620px){.welcome-clock{margin-top:22px}.welcome-time{font-size:clamp(45px,10vw,70px)}}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
-let state=null,interval=null,keypadIdle=null;
+let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
+const welcomeTimeFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true});
+const welcomeDateFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',weekday:'long',month:'long',day:'numeric'});
+function stopWelcomeClock(){if(welcomeClockTimer!==null){clearInterval(welcomeClockTimer);welcomeClockTimer=null}}
+function updateWelcomeClock(){const now=new Date();if($('welcomeTime'))$('welcomeTime').textContent=welcomeTimeFormatter.format(now);if($('welcomeDate'))$('welcomeDate').textContent=welcomeDateFormatter.format(now)}
+function startWelcomeClock(){stopWelcomeClock();updateWelcomeClock();welcomeClockTimer=setInterval(updateWelcomeClock,1000)}
+
 function clearKeypadIdle(){clearTimeout(keypadIdle);keypadIdle=null}
 function resetKeypadIdle(){clearKeypadIdle();keypadIdle=setTimeout(()=>{if(!state&&document.querySelector('main').classList.contains('login-mode'))welcome()},30000)}
 let lastActivity=Date.now(), countdownTimer=null,lastPing=0,signingOut=false;
@@ -443,10 +454,12 @@ function welcome(){
  clearKeypadIdle();preserveSessionControls();clearInterval(interval);stopCountdown();state=null;
  const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode');main.classList.add('welcome-mode');
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
- $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i></span><span class="welcome-prompt">Tap to Get Started</span></button>';
+ $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i><span class="welcome-clock"><span class="welcome-time" id="welcomeTime"></span><span class="welcome-date" id="welcomeDate"></span></span></span><span class="welcome-prompt">Tap to Get Started</span></button>';
  $('welcomeTouch').onclick=transitionToSignin;
+ startWelcomeClock();
 }
 function transitionToSignin(){
+ stopWelcomeClock();
  const screen=$('welcomeTouch');
  if(!screen||document.querySelector('.welcome-transition-snapshot'))return;
  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){signin();return}
@@ -530,6 +543,7 @@ function showClockAfterSignin(){
  fade.finished.then(()=>veil.remove(),()=>veil.remove());
 }
 function signin(){
+ stopWelcomeClock();
  setAppTheme('#f7f7f9');
  clearKeypadIdle();
  preserveSessionControls();
@@ -649,6 +663,7 @@ function signin(){
 function firstName(name){const n=String(name||'').trim();return n.includes(',')?(n.split(',')[1]?.trim().split(/\s+/)[0]||'there'):(n.split(/\s+/)[0]||'there')}
 function punchesToday(s){return s.totals.days.find(d=>d.date===s.today)?.punches||[]}
 function render(){
+ stopWelcomeClock();
  setAppTheme('#f7f7f9');
  preserveSessionControls();
  const main=document.querySelector('main');
