@@ -1,26 +1,28 @@
-/* Shared holiday visuals for admin previews and idle kiosk welcome screen.
-   No polling, cookies, external assets, timers or employee data. */
+/* Shared, decorative holiday scenes for Admin preview and idle kiosk clock.
+   All illustration assets are licensed SVGs stored locally. No network/timers. */
 (function(){
- const items=(count,kind)=>Array.from({length:count},(_,i)=>{
-  const x=(i*37+17)%100,delay=-(i*7%23)*.8,speed=10+(i*5)%15;
-  const size=10+(i*7)%12,sway=-20+(i*11)%41;
-  return '<i class="scene-particle '+kind+' tone-'+i%5+'" style="--x:'+x+'%;--delay:'+delay+'s;--speed:'+speed+'s;--flake-size:'+size+'px;--sway:'+sway+'px"></i>';
+ const decorative=(n,kind)=>Array.from({length:n},(_,i)=>{
+  const x=(i*47+13)%98;
+  const delay=-((i*7)%24)*.9;
+  const seconds=11+(i*5)%15;
+  const size=12+(i*7)%16;
+  const drift=-28+(i*13)%56;
+  return '<i class="scene-particle '+kind+' tone-'+(i%5)+'" style="--x:'+x+'%;--delay:'+delay+'s;--speed:'+seconds+'s;--flake-size:'+size+'px;--drift:'+drift+'px"></i>';
  }).join('');
- const pines=()=>'<span class="scene-forest">'+Array.from({length:6},(_,i)=>'<i class="scene-forest-tree forest-'+(i+1)+'"></i>').join('')+'</span>';
- const lights='<span class="scene-lights">'+Array.from({length:13},(_,i)=>'<i class="scene-bulb bulb-'+(i+1)+'"></i>').join('')+'</span>';
- const sparks='<span class="holiday-bursts">'+Array.from({length:5},(_,i)=>'<i class="holiday-burst burst-'+(i+1)+'"></i>').join('')+'</span>';
- const scenes={
+ const lights='<span class="holiday-light-string">'+Array.from({length:13},(_,i)=>'<i class="holiday-light light-'+(i+1)+'"></i>').join('')+'</span>';
+ const glints='<span class="holiday-glints">'+Array.from({length:4},(_,i)=>'<i class="holiday-glint glint-'+(i+1)+'"></i>').join('')+'</span>';
+ const scene={
   classic:'',
-  thanksgiving:'<span class="holiday-thanksgiving-land"></span><span class="holiday-turkey"></span>'+items(18,'scene-leaf'),
-  christmas:'<span class="scene-snowbank"></span>'+pines()+lights+items(25,'scene-snow'),
-  newyear:'<span class="holiday-city-haze"></span>'+sparks+'<span class="holiday-gold-dust"></span>'+items(15,'scene-gold'),
-  fourth:'<span class="holiday-bunting bunting-left"></span><span class="holiday-bunting bunting-right"></span><span class="holiday-flag-stars"></span>'+sparks+items(12,'scene-star')
+  thanksgiving:'<span class="holiday-leaf-glow"></span><span class="holiday-turkey"></span>'+decorative(15,'scene-leaf'),
+  christmas:'<span class="holiday-snowbank"></span><span class="holiday-tree tree-left"></span><span class="holiday-tree tree-right"></span>'+lights+decorative(21,'scene-snow'),
+  newyear:'<span class="holiday-champagne-glow"></span><span class="holiday-party-popper"></span>'+glints+decorative(16,'scene-confetti'),
+  fourth:'<span class="holiday-flag"></span><span class="holiday-flag-halo"></span>'+glints+decorative(11,'scene-star')
  };
  window.CFIThemeScene={
-  ids:Object.keys(scenes),
-  markup(theme){
-   const selected=Object.prototype.hasOwnProperty.call(scenes,theme)?theme:'classic';
-   return '<span class="season-scene" aria-hidden="true">'+scenes[selected]+'</span>';
+  ids:Object.keys(scene),
+  markup(name){
+   const theme=Object.prototype.hasOwnProperty.call(scene,name)?name:'classic';
+   return '<span class="season-scene" aria-hidden="true">'+scene[theme]+'</span>';
   }
  };
 })();
