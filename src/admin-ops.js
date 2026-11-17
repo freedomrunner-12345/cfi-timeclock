@@ -37,20 +37,36 @@ export async function adminOps(store,request){
  }
  if(route==='/api/admin/state'&&method==='GET'){
   const users=store.all('SELECT id,name,preferred_name,pay_type,birth_date FROM users WHERE is_archived=0 ORDER BY name COLLATE NOCASE');
+  // Scan the punch table ONCE for this request. Previously we scanned it once per
+  // employee and also ran a correlated MAX(at) subquery for every punch row.
+  // That combination can exhaust the Durable Objects rows_read limit.
+  const weekPunches=new Map(), lastPunches=new Map();
+  for(const row of store.all('SELECT user_id,id,kind,at,corrected_at FROM punches ORDER BY user_id,at')){
+   const previous=lastPunches.get(row.user_id);
+   if(!previous||row.at>previous.at)lastPunches.set(row.user_id,row);
+   if(store.week(store.date(row.at))!==week)continue;
+   let list=weekPunches.get(row.user_id);
+   if(!list){list=[];weekPunches.set(row.user_id,list);}
+   list.push({id:row.id,kind:row.kind,at:row.at,corrected_at:row.corrected_at});
+  }
+  const enabledById=new Map(store.all('SELECT id,enabled FROM employee_controls').map(r=>[r.id,r.enabled]));
+  const ptoById=new Map();
+  for(const row of store.all('SELECT user_id,id,date,hours,status,created_at FROM pto WHERE date>=? AND date<=? ORDER BY date',week,sunday)){
+   let list=ptoById.get(row.user_id);
+   if(!list){list=[];ptoById.set(row.user_id,list);}
+   list.push({id:row.id,date:row.date,hours:row.hours,status:row.status,created_at:row.created_at});
+  }
   const employeeData=users.map(u=>{
-   const flag=store.one('SELECT enabled FROM employee_controls WHERE id=?',u.id);
-   const punches=punchesFor(store,u.id,week);
+   const punches=weekPunches.get(u.id)||[];
    const totals=store.calculate(punches,week,today);
-   const requests=store.all('SELECT id,date,hours,status,created_at FROM pto WHERE user_id=? AND date>=? AND date<=? ORDER BY date',u.id,week,sunday);
+   const requests=ptoById.get(u.id)||[];
    const approvedPto=requests.filter(p=>p.status==='APPROVED').reduce((sum,p)=>sum+p.hours,0);
-   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',birthDate:u.birth_date||'',enabled:flag?.enabled!==0,payType:u.pay_type==='SALARY'?'SALARY':'HOURLY',totals,requests,approvedPto,punches};
+   return {id:u.id,name:u.name,preferredName:u.preferred_name||'',birthDate:u.birth_date||'',enabled:enabledById.get(u.id)!==0,payType:u.pay_type==='SALARY'?'SALARY':'HOURLY',totals,requests,approvedPto,punches};
   });
-  // Presence comes from the latest actual punch, not the payroll week selected above.
-  // An unclosed punch from a prior workday is an exception, not a live attendance signal.
-  const latest=store.all("SELECT p.user_id,p.kind,p.at FROM punches p WHERE p.at=(SELECT MAX(p2.at) FROM punches p2 WHERE p2.user_id=p.user_id) ORDER BY p.at DESC");
-  const byEmployee=new Map(latest.map(p=>[p.user_id,p]));
+  // Latest recorded punch per employee; no correlated database subqueries.
+  // Prior-day open shifts are review exceptions rather than current attendance.
   const presence=users.map(u=>{
-   const last=byEmployee.get(u.id)||null;
+   const last=lastPunches.get(u.id)||null;
    const todayPunch=last&&store.date(last.at)===today;
    const status=last?.kind==='IN'?(todayPunch?'in':'review'):'out';
    return {id:u.id,name:u.name,preferredName:u.preferred_name||'',status,lastKind:last?.kind||null,lastAt:last?.at||null};
