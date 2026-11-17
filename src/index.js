@@ -149,8 +149,8 @@ export class Timeclock {
       if (route.startsWith('/api/admin/')) return handleAdmin(this, req);
       if (route === '/api/config') return json({ pilot: true });
       if (route === '/api/welcome-theme' && req.method === 'GET') {
-        const settings=await this.ctx.storage.get('welcome_theme_settings');
-        return json({theme:activeWelcomeTheme(settings)});
+        const plan=await this.ctx.storage.get('welcome_theme_plan_v2');
+        return json({theme:activeWelcomeTheme(plan)});
       }
       if (route === '/api/login' && req.method === 'POST') {
         const data = await req.json();
