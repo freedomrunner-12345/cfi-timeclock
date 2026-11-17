@@ -134,7 +134,48 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .remember-admin{display:flex;align-items:center;gap:11px;font-size:15px;color:#454751;font-weight:650;margin:-4px 0 18px;cursor:pointer}
 .remember-admin input{width:18px;height:18px;accent-color:#b81025}
 @media(max-width:650px){.presence-groups{grid-template-columns:1fr}.presence-person small{white-space:normal;text-align:right}}
-</style></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script src="/admin/smart-entry.js"></script><script>
+
+/* Idle-clock theme gallery and opt-in schedule, isolated from payroll controls. */
+.theme-intro{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.theme-active-badge{display:inline-block;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:780;color:#1d7453;background:#e6f5ed}
+.theme-modes{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0}
+.theme-modes .btn{flex:1;min-width:140px}
+.theme-modes .btn[aria-pressed="true"]{background:#b81025;border-color:#b81025;color:white}
+.theme-help{font-size:14px;color:#787b85;margin:7px 0 18px!important}
+.theme-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:19px 0}
+.theme-tile{padding:11px;border:1px solid #e5e6ec;border-radius:18px;min-width:0}
+.theme-stage{display:flex;position:relative;isolation:isolate;align-items:center;justify-content:center;overflow:hidden;width:100%;height:194px;border-radius:13px;color:white;container-type:size;background:#17131c}
+.theme-stage .preview-center{position:relative;z-index:2;display:flex;flex-direction:column;gap:7px;align-items:center;transform:translateY(-3px);pointer-events:none}
+.theme-stage .preview-title{font-weight:800;font-size:22px;line-height:1.1;letter-spacing:-.05em}
+.theme-stage .preview-rule{width:31px;height:3px;background:#b81025;border-radius:8px}
+.theme-stage .preview-time{font-size:39px;line-height:1.1;font-weight:820;letter-spacing:-.06em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.theme-stage .preview-date{font-size:12px;color:#ffffffda;white-space:nowrap}
+.theme-stage .preview-prompt{position:absolute!important;z-index:3;bottom:12px;left:0;right:0;text-align:center;font-size:11px;color:#ffffffe0}
+.theme-tile-name{display:flex;justify-content:space-between;align-items:center;margin:10px 2px;gap:8px}
+.theme-tile-name b{font-size:17px}
+.theme-tile-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme-tile-actions .btn{min-width:0;font-size:14px;min-height:43px;padding:8px}
+.theme-tile .season-scene *{animation-play-state:paused}
+.theme-tile:hover .season-scene *, .theme-tile:focus-within .season-scene *{animation-play-state:running}
+.theme-preview-modal .theme-stage{height:min(58dvh,570px);min-height:315px}
+.theme-preview-modal .preview-center{gap:15px}
+.theme-preview-modal .preview-title{font-size:clamp(30px,6vw,56px)}
+.theme-preview-modal .preview-rule{width:46px;height:4px}
+.theme-preview-modal .preview-time{font-size:clamp(58px,10vw,88px)}
+.theme-preview-modal .preview-date{font-size:clamp(16px,2.4vw,22px)}
+.theme-preview-modal .preview-prompt{font-size:15px;bottom:22px}
+.modal:has(.theme-preview-modal){max-width:810px;padding:15px}
+.theme-date-grid{display:grid;gap:10px}
+.theme-date-row{display:grid;grid-template-columns:1.25fr 1fr 1fr auto;align-items:end;gap:10px;padding:13px;border:1px solid #ededf0;border-radius:14px}
+.theme-date-name{font-weight:780;align-self:center}
+.theme-date-row label{font-size:13px;font-weight:650;color:#6c707a}
+.theme-date-row input[type=date]{width:100%;min-height:40px;padding:6px;border:1px solid #dcdde3;border-radius:8px;color:#222;font:inherit;font-size:14px}
+.theme-date-row .repeat{display:flex;align-items:center;gap:6px;min-height:40px;white-space:nowrap}
+.theme-date-row input[type=checkbox]{width:18px;height:18px;accent-color:#b81025}
+.theme-save-bar{display:flex;align-items:center;gap:13px;justify-content:space-between;margin-top:18px;flex-wrap:wrap}
+.theme-save-bar .muted{font-size:13px}
+@media(max-width:680px){.theme-date-row{grid-template-columns:1fr 1fr}.theme-date-name{grid-column:1/-1}.theme-date-row .repeat{grid-column:1/-1}.theme-gallery{grid-template-columns:1fr}}
+</style><link rel="stylesheet" href="/seasonal-scenes.css"></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script src="/admin/smart-entry.js"></script><script src="/seasonal-scenes.js"></script><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
 async function api(path,body){const r=await fetch('/api/admin/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json().catch(()=>({error:'Connection unavailable'}));if(!r.ok)throw Error(data.error||'Request failed');return data}
@@ -192,8 +233,100 @@ async function refreshPresence(quiet=false){if(document.hidden||!document.queryS
 
 function addWeek(delta){const d=new Date(week+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+7*delta);week=d.toISOString().slice(0,10);refresh().catch(e=>alertUser(e.message))}
 function render(){$('logout').classList.remove('hidden');const employees=state.employees,worked=employees.reduce((sum,e)=>sum+(e.payType==='SALARY'?0:e.totals.workedHours),0),pending=employees.reduce((s,e)=>s+e.requests.filter(r=>r.status==='PENDING').length,0);
-$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div>'+presenceHtml()+'<nav class="tabs">'+['overview','paychex','employees','pto'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
+$('app').innerHTML='<h1 class="title">Time clock overview</h1><p class="muted">Manage employee hours, time off, and payroll.</p><div class="card hrow"><button id="prev" class="btn outline">← Previous</button><div style="text-align:center"><b>'+displayDay(week)+' – '+displayDay(state.sunday)+'</b><div class="sub">Payroll week</div></div><button id="next" class="btn outline">Next →</button></div><div class="grid"><div class="card stats"><div class="muted small">Employees</div><div class="metric">'+employees.length+'</div></div><div class="card stats"><div class="muted small">Hourly worked hours</div><div class="metric">'+fix(worked)+'</div><div class="hourly-hours-note">Excludes salaried employees</div></div><div class="card stats"><div class="muted small">PTO pending</div><div class="metric">'+pending+'</div></div></div>'+presenceHtml()+'<nav class="tabs">'+['overview','paychex','employees','pto','themes'].map(t=>'<button class="tab '+(tab===t?'selected':'')+'" data-tab="'+t+'">'+({overview:'Timecards',paychex:'Paychex Entry',employees:'Employees',pto:'PTO Requests',themes:'Themes'}[t])+'</button>').join('')+'</nav><section id="content"></section>';
 $('refreshPresence').onclick=()=>refreshPresence(false);$('prev').onclick=()=>addWeek(-1);$('next').onclick=()=>addWeek(1);document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});$('logout').onclick=async()=>{await api('logout',{});state=null;week=null;quickDraft=null;updateQuickDock();login(true)};drawContent()}
+const WELCOME_PRESETS=[
+ {id:'classic',name:'Classic CFI'},
+ {id:'thanksgiving',name:'Thanksgiving'},
+ {id:'christmas',name:'Christmas'},
+ {id:'newyear',name:'New Year'},
+ {id:'fourth',name:'Fourth of July'}
+];
+let themePlan=null,themeActive='classic';
+const themeName=id=>WELCOME_PRESETS.find(x=>x.id===id)?.name||'Classic CFI';
+const themeClockText=()=>({
+ time:new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date()),
+ date:new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',month:'long',day:'numeric',weekday:'long'}).format(new Date())
+});
+function themePreviewStage(theme){
+ const current=themeClockText();
+ return '<div class="theme-stage" data-theme="'+theme+'">'
+ +(window.CFIThemeScene?.markup(theme)||'')
+ +'<div class="preview-center"><span class="preview-title">Time Clock</span><i class="preview-rule"></i>'
+ +'<strong class="preview-time">'+current.time+'</strong><span class="preview-date">'+current.date+'</span></div>'
+ +'<span class="preview-prompt">Tap to Get Started</span></div>';
+}
+function showThemePreview(theme){
+ const item=WELCOME_PRESETS.find(x=>x.id===theme);if(!item)return;
+ // Purely local preview. The existing modal helper supplies exactly one Close button.
+ pop('<div class="theme-preview-modal">'+themePreviewStage(item.id)
+  +'<h2 style="margin:14px 5px 0">'+item.name+'</h2><p class="muted" style="margin:5px">Preview only — no changes to the tablets.</p></div>');
+}
+async function drawThemeSettings(c){
+ c.innerHTML='<section class="card"><h2>Welcome Screen Themes</h2><p class="muted">Classic CFI is the default. Additional themes show only when you explicitly activate one or enable a schedule.</p><div id="themeSettingsPanel">Loading…</div></section>';
+ try{
+  const result=await api('welcome-theme');
+  if(tab!=='themes'||!c.isConnected)return;
+  themePlan=result.plan;themeActive=result.activeTheme;
+  renderThemeSettings(c);
+ }catch(e){if(tab==='themes'&&c.querySelector('#themeSettingsPanel'))c.querySelector('#themeSettingsPanel').textContent='Unable to load themes: '+e.message}
+}
+async function saveThemePlan(plan,success){
+ const data=await api('welcome-theme',plan);
+ themePlan=data.plan;themeActive=data.activeTheme;
+ if(tab==='themes'&&$('content'))renderThemeSettings($('content'));
+ if(success)alertUser(success);
+}
+function renderThemeSettings(c){
+ const panel=c.querySelector('#themeSettingsPanel');if(!panel||!themePlan)return;
+ const mode=themePlan.mode;
+ const todayYear=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric'}).format(new Date());
+ const defaults=Object.fromEntries(themePlan.schedules.map(w=>[w.theme,w]));
+ const dateRow=item=>{
+  const w=defaults[item.id]||{};
+  return '<div class="theme-date-row" data-theme-date="'+item.id+'">'
+   +'<div class="theme-date-name">'+item.name+'</div>'
+   +'<label>Start date<input type="date" class="theme-date-start" value="'+safe(w.start||'')+'"></label>'
+   +'<label>End date<input type="date" class="theme-date-end" value="'+safe(w.end||'')+'"></label>'
+   +'<label class="repeat"><input type="checkbox" class="theme-date-repeat" '+(w.repeat?'checked':'')+'> Repeat yearly</label></div>';
+ };
+ panel.innerHTML='<div class="theme-intro"><b>Currently showing: '+themeName(themeActive)+'</b>'
+  +'<span class="theme-active-badge">'+(mode==='scheduled'?'Schedule enabled':mode==='manual'?'Manually selected':'Original welcome screen')+'</span></div>'
+  +'<div class="theme-modes">'
+  +'<button type="button" class="btn outline" id="themeClassicMode" aria-pressed="'+(mode==='classic')+'">Use Classic CFI</button>'
+  +'<button type="button" class="btn outline" id="themeScheduledMode" aria-pressed="'+(mode==='scheduled')+'">Use My Schedule</button></div>'
+  +'<p class="theme-help">Preview a design without changing anything, or choose Show Now to use it until you select Classic or the schedule again.</p>'
+  +'<div class="theme-gallery">'+WELCOME_PRESETS.map(item=>'<div class="theme-tile">'+themePreviewStage(item.id)
+   +'<div class="theme-tile-name"><b>'+item.name+'</b>'+(item.id===themeActive?'<span class="theme-active-badge">Active</span>':'')+'</div>'
+   +'<div class="theme-tile-actions"><button type="button" class="btn outline" data-theme-preview="'+item.id+'">Preview</button>'
+   +'<button type="button" class="btn '+(item.id===themeActive?'outline':'red')+'" data-theme-now="'+item.id+'">'+(item.id===themeActive?'Showing':'Show Now')+'</button></div></div>').join('')+'</div>'
+  +'<div class="card" style="margin:15px 0 0"><h2>Schedule Holiday Themes</h2>'
+  +'<p class="muted">Choose the exact dates you want. Dates are inclusive and use Central Time. Leave both dates blank for a holiday you do not want scheduled.</p>'
+  +'<form id="themeScheduleForm"><div class="theme-date-grid">'+WELCOME_PRESETS.filter(x=>x.id!=='classic').map(dateRow).join('')+'</div>'
+  +'<div class="theme-save-bar"><span class="muted">Yearly repeats follow the same calendar dates. In overlapping periods, the lower holiday row takes priority.</span>'
+  +'<button type="submit" class="btn red">Save Dates</button></div></form></div>';
+ panel.querySelector('#themeClassicMode').onclick=async()=>{try{await saveThemePlan({...themePlan,mode:'classic',theme:'classic'},'Classic CFI restored.')}catch(e){alertUser(e.message)}};
+ panel.querySelector('#themeScheduledMode').onclick=async()=>{try{await saveThemePlan({...themePlan,mode:'scheduled'},'Holiday schedule enabled.')}catch(e){alertUser(e.message)}};
+ panel.querySelectorAll('[data-theme-preview]').forEach(b=>b.onclick=()=>showThemePreview(b.dataset.themePreview));
+ panel.querySelectorAll('[data-theme-now]').forEach(b=>b.onclick=async()=>{
+  const chosen=b.dataset.themeNow;
+  try{await saveThemePlan({...themePlan,mode:chosen==='classic'?'classic':'manual',theme:chosen},chosen==='classic'?'Classic CFI restored.':themeName(chosen)+' is now selected.')}
+  catch(e){alertUser(e.message)}
+ });
+ panel.querySelector('#themeScheduleForm').onsubmit=async e=>{
+  e.preventDefault();const form=e.currentTarget;
+  const schedules=[];
+  for(const row of form.querySelectorAll('[data-theme-date]')){
+   const start=row.querySelector('.theme-date-start').value,end=row.querySelector('.theme-date-end').value;
+   if(!start&&!end)continue;
+   if(!start||!end){alertUser('Enter both dates for '+themeName(row.dataset.themeDate)+'.');return}
+   schedules.push({theme:row.dataset.themeDate,start,end,repeat:row.querySelector('.theme-date-repeat').checked});
+  }
+  const submit=form.querySelector('button[type=submit]');submit.disabled=true;
+  try{await saveThemePlan({...themePlan,schedules},'Schedule dates saved. '+(themePlan.mode==='scheduled'?'Schedule is enabled.':'Select Use My Schedule when ready.'))}
+  catch(error){submit.disabled=false;alertUser(error.message)}
+ };
+}
 function drawPaychexEntry(c){
  const hourly=state.employees.filter(e=>e.payType!=='SALARY').sort((a,b)=>a.name.localeCompare(b.name));
  const salaried=state.employees.filter(e=>e.payType==='SALARY');
@@ -220,7 +353,7 @@ function drawPaychexEntry(c){
   +'<p class="paychex-note">Regular and overtime hours use the time clock’s weekly rounding. PTO shows approved hours only. Salaried employees ('+salaried.length+') are excluded from this entry table and its totals. This is a reference for manual Paychex entry—not an automatic payroll submission.</p></section>';
  c.querySelectorAll('[data-paychex-view]').forEach(b=>b.onclick=()=>showCard(state.employees.find(e=>e.id===b.dataset.paychexView)));
 }
-function drawContent(){const c=$('content');if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
+function drawContent(){const c=$('content');if(tab==='themes'){drawThemeSettings(c);return}if(tab==='paychex'){drawPaychexEntry(c);return}if(tab==='employees'){
  const people=state.employees.slice().sort((a,b)=>a.name.localeCompare(b.name));
  c.innerHTML='<details class="card employee-form-details"><summary>Import employee roster</summary><p class="muted">Import a roster file (.tsv).</p><input id="rosterfile" class="input" type="file" accept=".tsv,.txt,text/tab-separated-values"><button class="btn red" id="importroster">Import roster</button></details>'
  +'<details class="card employee-form-details"><summary>Add employee</summary><form id="add"><label class="label">Paychex employee ID</label><input class="input" name="id" inputmode="numeric" autocomplete="off" required><label class="label">Employee name</label><input class="input" name="name" autocomplete="off" required><button class="btn red">Add employee</button></form></details>'
