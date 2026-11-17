@@ -437,7 +437,7 @@ let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
 const welcomeTimeFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true});
 const welcomeDateFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',weekday:'long',month:'long',day:'numeric'});
 function stopWelcomeClock(){if(welcomeClockTimer!==null){clearInterval(welcomeClockTimer);welcomeClockTimer=null}}
-function updateWelcomeClock(){const now=new Date();if($('welcomeTime'))$('welcomeTime').textContent=welcomeTimeFormatter.format(now);if($('welcomeDate'))$('welcomeDate').textContent=welcomeDateFormatter.format(now)}
+function updateWelcomeClock(){const now=new Date();if($('welcomeTime'))$('welcomeTime').textContent=welcomeTimeFormatter.format(now);if($('welcomeDate'))$('welcomeDate').textContent=welcomeDateFormatter.format(now);if($('welcomeTouch')&&document.querySelector('main')?.classList.contains('welcome-mode')){const today=centralThemeDay.format(now);if(today!==lastWelcomeThemeDate){lastWelcomeThemeDate=today;refreshWelcomeTheme($('welcomeTouch'));}}}
 function startWelcomeClock(){stopWelcomeClock();updateWelcomeClock();welcomeClockTimer=setInterval(updateWelcomeClock,1000)}
 
 function clearKeypadIdle(){clearTimeout(keypadIdle);keypadIdle=null}
@@ -500,6 +500,47 @@ function preserveSessionControls(){
  if(controls&&controls.parentElement===$('app'))document.querySelector('main').appendChild(controls);
 }
 function setAppTheme(color){document.querySelector('meta[name="theme-color"]')?.setAttribute('content',color)}
+// The original welcome screen stays untouched unless a saved theme is active.
+// Load holiday assets only when needed; one KV-backed request per welcome entry.
+let holidayAssetsPromise=null, lastWelcomeThemeDate='';
+const centralThemeDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'});
+function ensureHolidayAssets(){
+ if(holidayAssetsPromise)return holidayAssetsPromise;
+ holidayAssetsPromise=new Promise((resolve,reject)=>{
+  const stylesheet=document.createElement('link');
+  stylesheet.rel='stylesheet';stylesheet.href='/seasonal-scenes.css';
+  stylesheet.onload=()=>{
+   const script=document.createElement('script');script.src='/seasonal-scenes.js';
+   script.onload=resolve;script.onerror=()=>reject(Error('Theme artwork unavailable'));
+   document.head.appendChild(script);
+  };
+  stylesheet.onerror=()=>reject(Error('Theme artwork unavailable'));
+  document.head.appendChild(stylesheet);
+ }).catch(e=>{holidayAssetsPromise=null;throw e});
+ return holidayAssetsPromise;
+}
+async function refreshWelcomeTheme(touch){
+ if(!touch)return;
+ try{
+  const response=await fetch('/api/welcome-theme',{cache:'no-store'});
+  if(!response.ok)return; // Never block sign-in due to a theme error.
+  const data=await response.json();
+  if(touch!==$('welcomeTouch')||!touch.isConnected)return;
+  const theme=['thanksgiving','christmas','newyear','fourth'].includes(data.theme)?data.theme:'classic';
+  if(theme==='classic'){
+   touch.removeAttribute('data-theme');
+   touch.querySelector('.season-scene')?.remove();
+   return;
+  }
+  await ensureHolidayAssets();
+  if(touch!==$('welcomeTouch')||!touch.isConnected||!window.CFIThemeScene)return;
+  touch.dataset.theme=theme;
+  const markup=window.CFIThemeScene.markup(theme);
+  const existing=touch.querySelector('.season-scene');
+  if(existing)existing.outerHTML=markup;
+  else touch.querySelector('.welcome-center')?.insertAdjacentHTML('beforebegin',markup);
+ }catch(e){/* Visual effects must never stop an employee from punching in or out. */}
+}
 function welcome(){
  setAppTheme('#101116');
  clearKeypadIdle();preserveSessionControls();clearInterval(interval);stopCountdown();state=null;
@@ -507,7 +548,9 @@ function welcome(){
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
  $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i><span class="welcome-clock"><span class="welcome-time" id="welcomeTime"></span><span class="welcome-date" id="welcomeDate"></span></span></span><span class="welcome-prompt">Tap to Get Started</span></button>';
  $('welcomeTouch').onclick=transitionToSignin;
+ lastWelcomeThemeDate=centralThemeDay.format(new Date());
  startWelcomeClock();
+ refreshWelcomeTheme($('welcomeTouch'));
 }
 function transitionToSignin(){
  stopWelcomeClock();
