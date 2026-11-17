@@ -1,3 +1,4 @@
+import { WELCOME_THEMES, validatedWelcomeTheme } from './welcome-themes.js';
 const result=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...headers}});
 const error=(message,status=400)=>result({error:message},status);
 const id=()=>crypto.randomUUID();
@@ -24,6 +25,19 @@ export async function adminOps(store,request){
   }
   const filename='cfi-full-punch-backup-'+store.date(new Date().toISOString())+'.csv';
   return new Response('\ufeff'+rows.join('\r\n')+'\r\n',{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="'+filename+'"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+ }
+ if(route==='/api/admin/welcome-theme'){
+  if(method==='GET'){
+   const saved=await store.ctx.storage.get('welcome_theme');
+   return result({theme:validatedWelcomeTheme(saved),options:WELCOME_THEMES});
+  }
+  if(method==='POST'){
+   const payload=await request.json();
+   if(!payload||typeof payload.theme!=='string'||!WELCOME_THEMES.includes(payload.theme))return error('Choose one of the available themes');
+   await store.ctx.storage.put('welcome_theme',payload.theme);
+   return result({ok:true,theme:payload.theme});
+  }
+  return error('Method not allowed',405);
  }
  const today=store.date(new Date().toISOString());
  const asked=url.searchParams.get('week');
