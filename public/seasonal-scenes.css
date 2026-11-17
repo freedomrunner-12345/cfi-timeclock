@@ -1,197 +1,92 @@
-/* Seasonal scene assets: purely decorative, no scripts or data. */
-/* Seasonal looks affect only the idle welcome clock. */
-:is(.welcome-touch,.theme-stage)[data-theme="winter"]{--scene:radial-gradient(ellipse at 52% 31%,#214d76 0%,#132e53 46%,#081426 100%);--halo:radial-gradient(circle,#8bd9ff95 0%,#5ba5e94d 40%,transparent 75%);--bloom:radial-gradient(circle,#ecf9ff78 0%,#91d7fa30 44%,transparent 72%);--accent:#9edcff}
-:is(.welcome-touch,.theme-stage)[data-theme="spring"]{--scene:radial-gradient(ellipse at 54% 34%,#366b5a 0%,#234a42 49%,#142f32 100%);--halo:radial-gradient(circle,#ffbbad8c 0%,#e27d8660 40%,transparent 75%);--bloom:radial-gradient(circle,#b3f0b36c 0%,#6bbf8c32 48%,transparent 72%);--accent:#f5b8a4}
-:is(.welcome-touch,.theme-stage)[data-theme="summer"]{--scene:radial-gradient(ellipse at 50% 33%,#155d76 0%,#093e59 46%,#10233e 100%);--halo:radial-gradient(circle,#ffb968a0 0%,#e982594a 45%,transparent 76%);--bloom:radial-gradient(circle,#69dde990 0%,#3f9faf30 45%,transparent 75%);--accent:#ffd193}
-:is(.welcome-touch,.theme-stage)[data-theme="autumn"]{--scene:radial-gradient(ellipse at 53% 38%,#70432e 0%,#442b2a 50%,#201d27 100%);--halo:radial-gradient(circle,#f49c4c93 0%,#d66d3c54 41%,transparent 75%);--bloom:radial-gradient(circle,#e9be7770 0%,#ad693a28 46%,transparent 74%);--accent:#efaa68}
-:is(.welcome-touch,.theme-stage)[data-theme="thanksgiving"]{--scene:radial-gradient(ellipse at 52% 36%,#805030 0%,#4b3528 46%,#29212a 100%);--halo:radial-gradient(circle,#df9b4e9c 0%,#b66c3356 42%,transparent 75%);--bloom:radial-gradient(circle,#f0d29c85 0%,#94714438 46%,transparent 75%);--accent:#ffd094}
-:is(.welcome-touch,.theme-stage)[data-theme="halloween"]{--scene:radial-gradient(ellipse at 52% 36%,#4a275f 0%,#27203e 49%,#120e1f 100%);--halo:radial-gradient(circle,#ff8428aa 0%,#d1583462 40%,transparent 76%);--bloom:radial-gradient(circle,#b57fe57c 0%,#6d479c38 49%,transparent 74%);--accent:#ff9c43}
-:is(.welcome-touch,.theme-stage)[data-theme="winterlights"]{--scene:radial-gradient(ellipse at 51% 37%,#24473c 0%,#18312f 45%,#0e1c25 100%);--halo:radial-gradient(circle,#f5c77da3 0%,#d29c5155 44%,transparent 76%);--bloom:radial-gradient(circle,#eaf8df8a 0%,#91c6a740 43%,transparent 74%);--accent:#f1cd94}
-:is(.welcome-touch,.theme-stage)[data-theme="newyear"]{--scene:radial-gradient(ellipse at 48% 35%,#32395d 0%,#19233b 47%,#0a1022 100%);--halo:radial-gradient(circle,#edc47791 0%,#dba9504a 40%,transparent 75%);--bloom:radial-gradient(circle,#a7b3f46a 0%,#7e8dce28 48%,transparent 74%);--accent:#e8c77c}
-:is(.welcome-touch,.theme-stage)[data-theme="patriotic"]{--scene:radial-gradient(ellipse at 50% 37%,#244a7f 0%,#1b315c 48%,#10182d 100%);--halo:radial-gradient(circle,#dd3c5693 0%,#b428495a 40%,transparent 75%);--bloom:radial-gradient(circle,#dfe8ff7d 0%,#a4bcff30 46%,transparent 73%);--accent:#e95b70}
-:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]){background:var(--scene)}
-:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::after,
-:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .ambient-red{background:var(--halo)}
+/* Five holiday-only idle clock themes. All decor is static markup and CSS.
+   Assets are local, motion is optional, and the kiosk clock stays readable. */
+:is(.welcome-touch,.theme-stage){position:relative;isolation:isolate;overflow:hidden;color:white}
+:is(.welcome-touch,.theme-stage)[data-theme="thanksgiving"]{
+ --accent:#edb76f;background:radial-gradient(ellipse at 50% 38%,#74432d 0%,#482b29 48%,#211c27 100%)!important}
+:is(.welcome-touch,.theme-stage)[data-theme="christmas"]{
+ --accent:#e3c77b;background:radial-gradient(ellipse at 50% 37%,#1a503d 0%,#10392f 49%,#0c1b24 100%)!important}
+:is(.welcome-touch,.theme-stage)[data-theme="newyear"]{
+ --accent:#eed49a;background:radial-gradient(ellipse at 52% 37%,#27354e 0%,#111b31 54%,#070e1d 100%)!important}
+:is(.welcome-touch,.theme-stage)[data-theme="fourth"]{
+ --accent:#e6cf9e;background:radial-gradient(ellipse at 50% 40%,#31496e 0%,#1b3458 50%,#152238 100%)!important}
+:is(.welcome-touch,.theme-stage) .season-scene{
+ position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;container-type:size;display:block;opacity:.93
+}
+:is(.welcome-touch,.theme-stage) .season-scene *, :is(.welcome-touch,.theme-stage) .season-scene *::before{
+ box-sizing:border-box;pointer-events:none
+}
+.theme-stage .preview-center, .theme-stage .preview-prompt,
+.welcome-touch .welcome-center,.welcome-touch .welcome-prompt{z-index:2;position:relative}
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::before,
-:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .ambient-white{background:var(--bloom)}
-:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .welcome-rule{background:var(--accent);box-shadow:0 0 19px var(--accent)}
-
-
-/* Same exact theme palette and decorations in admin previews and the kiosk welcome screen. */
-.theme-stage{position:relative;isolation:isolate;overflow:hidden;color:#fff;background:radial-gradient(ellipse at 53% 39%,#34202c 0%,#1c1922 51%,#0b0d11 100%)}
-.theme-stage .season-scene,.welcome-touch .season-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;container-type:size}
-:is(.theme-stage,.welcome-touch) .season-scene ~ .preview-center,
-.welcome-touch .welcome-center,.welcome-touch .welcome-prompt{position:relative;z-index:2}
-.theme-stage[data-theme]:not([data-theme="classic"]){background:var(--scene)}
-:is(.theme-stage,.welcome-touch) .scene-particle{position:absolute;display:block;pointer-events:none}
-.scene-snow{width:clamp(2px,0.55cqw,5px);height:clamp(2px,0.55cqw,5px);top:-10px;left:var(--x);border-radius:50%;background:#f4fbff;box-shadow:0 0 7px #d1f0ff99;opacity:.8;animation:scene-snowfall var(--speed) linear var(--delay) infinite}
-.scene-snow:nth-child(3n){opacity:.45;width:2px;height:2px}
-.scene-snow:nth-child(4n){opacity:.95;filter:blur(.5px)}
-@keyframes scene-snowfall{0%{transform:translate3d(-9px,-10px,0)}50%{transform:translate3d(15px,53cqh,0)}100%{transform:translate3d(-10px,112cqh,0)}}
-.scene-snowbank{position:absolute;bottom:-8%;height:23%;left:-12%;width:125%;border-radius:50% 50% 0 0;background:linear-gradient(180deg,#d4eff42b,#aacdd119);filter:blur(2px)}
-.scene-pine{position:absolute;bottom:1%;width:19%;height:45%;display:block;filter:drop-shadow(0 5px 16px #02171a55);opacity:.8}
-.scene-pine.pine-1{left:0%;height:42%;opacity:.63;transform:scale(.88);transform-origin:bottom}
-.scene-pine.pine-2{right:2%;height:55%;opacity:.9}
-.scene-pine.pine-3{right:20%;height:32%;opacity:.5}
-.scene-pine>i{position:absolute;width:0;height:0;left:50%;transform:translateX(-50%);border-left:clamp(25px,12cqw,130px) solid transparent;border-right:clamp(25px,12cqw,130px) solid transparent;border-bottom:clamp(55px,31cqh,290px) solid #092c31}
-.scene-pine>i:nth-child(1){top:0%;border-left-width:clamp(13px,6cqw,65px);border-right-width:clamp(13px,6cqw,65px);border-bottom-width:clamp(30px,20cqh,160px);z-index:3}
-.scene-pine>i:nth-child(2){top:18%;border-left-width:clamp(19px,9cqw,95px);border-right-width:clamp(19px,9cqw,95px);border-bottom-width:clamp(38px,25cqh,215px);z-index:2}
-.scene-pine>i:nth-child(3){top:38%;z-index:1}
-.scene-pine>b{position:absolute;bottom:0;left:calc(50% - 3px);height:21%;width:6px;background:#173638}
-[data-theme="winterlights"] .scene-pine>i{border-bottom-color:#073a2d}
-[data-theme="winter"] .scene-pine>i{border-bottom-color:#143e57}
-.scene-lights{position:absolute;top:-5%;left:-4%;width:108%;height:24%;border-bottom:2px solid #f6d7a469;border-radius:0 0 50% 50%;transform:rotate(-3deg);filter:drop-shadow(0 0 3px #f6bc6877)}
-.scene-bulb{position:absolute;top:75%;left:calc((var(--bulb-i, 1) - 1)*8%);height:clamp(5px,1cqw,11px);width:clamp(5px,1cqw,11px);border-radius:50%;background:#ffdc91;box-shadow:0 0 9px 4px #ffcd7080;animation:scene-twinkle 2.8s ease-in-out infinite alternate}
-.scene-bulb:nth-child(2n){background:#e7f5dc;box-shadow:0 0 10px 3px #daffb378;animation-delay:-1.1s}
-.scene-bulb:nth-child(3n){background:#f2a4ac;box-shadow:0 0 8px 4px #f4b7ad55;animation-delay:-1.7s}
-.scene-bulb:nth-child(1){left:0%;top:48%}
-.scene-bulb:nth-child(2){left:8%;top:58.35276180410083%}
-.scene-bulb:nth-child(3){left:16%;top:68%}
-.scene-bulb:nth-child(4){left:24%;top:76.2842712474619%}
-.scene-bulb:nth-child(5){left:32%;top:82.64101615137754%}
-.scene-bulb:nth-child(6){left:40%;top:86.63703305156272%}
+:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"])::after,
+:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .ambient{display:none}
+:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .welcome-rule,
+.theme-stage[data-theme]:not([data-theme="classic"]) .preview-rule{background:var(--accent)!important;box-shadow:0 0 16px #ffffff29}
+.scene-particle{position:absolute;display:block;left:var(--x);top:-12%;animation-delay:var(--delay);animation-duration:var(--speed)}
+/* Christmas: emerald and cranberry highlights, warm string lights, snow, evergreens. */
+.scene-forest{position:absolute;inset:0}
+.scene-forest-tree{position:absolute;bottom:2%;width:24%;height:45%;background:url('/seasonal-assets/tree-pine.svg') center bottom/contain no-repeat;filter:brightness(.64) saturate(1.2);opacity:.7}
+.forest-1{left:-4%;height:52%;opacity:.75}
+.forest-2{left:9%;height:35%;opacity:.5}
+.forest-3{left:22%;height:20%;opacity:.28}
+.forest-4{right:-4%;height:56%;opacity:.82}
+.forest-5{right:10%;height:36%;opacity:.52}
+.forest-6{right:23%;height:20%;opacity:.25}
+.scene-snowbank{position:absolute;bottom:-12%;left:-10%;width:120%;height:28%;border-radius:50% 50% 0 0;background:linear-gradient(180deg,#def0e925,#9ac9b416)}
+.scene-snow{width:var(--flake-size);height:var(--flake-size);background:url('/seasonal-assets/snowflake.svg') center/contain no-repeat;opacity:.7;animation-name:holiday-snowfall;animation-timing-function:linear;animation-iteration-count:infinite}
+.scene-snow:nth-child(3n){width:calc(var(--flake-size)*.65);height:calc(var(--flake-size)*.65);opacity:.4}
+.scene-snow:nth-child(5n){filter:blur(.5px)}
+@keyframes holiday-snowfall{0%{transform:translate3d(-8px,0,0) rotate(-12deg)}50%{transform:translate3d(12px,55cqh,0) rotate(15deg)}100%{transform:translate3d(var(--sway),125cqh,0) rotate(40deg)}}
+.scene-lights{position:absolute;left:1%;top:-6%;height:23%;width:98%;border-bottom:2px solid #ecd39475;border-radius:0 0 50% 50%;transform:rotate(-1deg)}
+.scene-bulb{position:absolute;display:block;width:clamp(5px,1cqw,11px);height:clamp(5px,1cqw,11px);border-radius:50%;background:#f2c66a;box-shadow:0 0 11px 4px #f9cd7580;animation:holiday-light-pulse 3s ease-in-out infinite alternate}
+.scene-bulb:nth-child(2n){background:#e8a2a0;box-shadow:0 0 10px 4px #bd344b75;animation-delay:-1.2s}
+.scene-bulb:nth-child(3n){background:#f8f1d8;box-shadow:0 0 10px 4px #e8fbd077;animation-delay:-2s}
+.scene-bulb:nth-child(1){left:0%;top:40%}
+.scene-bulb:nth-child(2){left:8%;top:52.423314164920995%}
+.scene-bulb:nth-child(3){left:16%;top:64%}
+.scene-bulb:nth-child(4){left:24%;top:73.94112549695427%}
+.scene-bulb:nth-child(5){left:32%;top:81.56921938165306%}
+.scene-bulb:nth-child(6){left:40%;top:86.36443966187528%}
 .scene-bulb:nth-child(7){left:48%;top:88%}
-.scene-bulb:nth-child(8){left:56%;top:86.63703305156272%}
-.scene-bulb:nth-child(9){left:64%;top:82.64101615137756%}
-.scene-bulb:nth-child(10){left:72%;top:76.2842712474619%}
-.scene-bulb:nth-child(11){left:80%;top:68%}
-.scene-bulb:nth-child(12){left:88%;top:58.35276180410084%}
-.scene-bulb:nth-child(13){left:96%;top:48.00000000000001%}
-@keyframes scene-twinkle{0%{opacity:.45;transform:scale(.8)}100%{opacity:1;transform:scale(1.15)}}
-.scene-gold,.scene-firefly,.scene-star{left:var(--x);top:calc(20% + ((var(--x) + 12%) / 3));width:4px;height:4px;border-radius:50%;background:#ffe4a8;box-shadow:0 0 10px 3px #ffd28c78;animation:scene-glitter var(--speed) ease-in-out var(--delay) infinite alternate}
-@keyframes scene-glitter{0%{opacity:.1;transform:translateY(18px) scale(.5)}50%{opacity:1}100%{opacity:.3;transform:translateY(-20px) scale(1.25)}}
-.scene-hills{position:absolute;bottom:-12%;left:-10%;width:125%;height:36%;border-radius:50% 55% 0 0;background:linear-gradient(180deg,#402a3170,#271d21bb)}
-.scene-leaf,.scene-petal{top:-10%;left:var(--x);height:clamp(9px,2cqw,18px);width:clamp(6px,1.3cqw,12px);border-radius:85% 4% 70% 15%;background:#e6a057;box-shadow:inset 1px 0 2px #fbc77c50;animation:scene-leaf-fall var(--speed) linear var(--delay) infinite}
-.scene-leaf:nth-child(3n){background:#c66543}
-.scene-leaf:nth-child(4n){background:#e8c075}
-.scene-petal{background:#f4b7c4;border-radius:75% 4% 80% 20%}
-.scene-petal:nth-child(3n){background:#f5dbdd}
-@keyframes scene-leaf-fall{0%{transform:translate3d(0,0,0) rotate(10deg)}50%{transform:translate3d(26px,53cqh,0) rotate(190deg)}100%{transform:translate3d(-25px,111cqh,0) rotate(380deg)}}
-.scene-harvest{position:absolute;bottom:7%;left:10%;display:flex;gap:clamp(2px,1cqw,15px);align-items:end}
-.scene-harvest i{display:block;width:clamp(23px,5cqw,62px);height:clamp(18px,4cqw,52px);border-radius:42% 48% 40% 42%;background:radial-gradient(ellipse at 30% 30%,#f2ae5a,#a65b35);box-shadow:inset -6px 0 11px #72392350}
-.scene-harvest i:nth-child(2){transform:scale(1.25);background:radial-gradient(ellipse at 25% 25%,#f3c373,#b36b38)}
-.scene-moon{position:absolute;top:10%;right:13%;width:clamp(55px,13cqw,180px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffe5a7,#e6a861);box-shadow:0 0 38px #f6ac5890}
-.scene-bats{position:absolute;top:18%;left:17%;width:30%;height:25%}
-.scene-bats i{position:absolute;width:20px;height:7px;border-radius:80% 80% 12% 12%;background:#20152b;box-shadow:12px 2px 0 #20152b;transform:rotate(-12deg)}
-.scene-bats i:nth-child(2){left:40%;top:44%;transform:scale(.6) rotate(18deg)}
-.scene-bats i:nth-child(3){left:85%;top:17%;transform:scale(.85) rotate(5deg)}
-.scene-mist{left:var(--x);top:75%;width:24cqw;height:4cqh;background:#c4a6d329;border-radius:50%;filter:blur(12px);animation:scene-mist-drift var(--speed) linear var(--delay) infinite alternate}
-@keyframes scene-mist-drift{to{transform:translateX(65px)}}
-.scene-branch{position:absolute;right:3%;bottom:10%;width:27%;height:47%;border-left:clamp(5px,1cqw,12px) solid #194638;border-radius:50%;transform:rotate(40deg);opacity:.7}
-.scene-sunset{position:absolute;bottom:18%;right:10%;width:30cqw;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#ffe7a9,#ffc16d 65%,transparent 70%);filter:blur(3px);opacity:.8;box-shadow:0 0 60px #ffc16d60}
-.scene-firefly{background:#d4ffb5;box-shadow:0 0 12px 3px #bfffc68a}
-.scene-skyline{position:absolute;bottom:0;left:0;width:100%;height:22%;background:linear-gradient(90deg,#121b2ebf 0 8%,transparent 8% 10%,#121b2ebf 10% 17%,transparent 17% 21%,#121b2ebf 21% 31%,transparent 31% 34%,#121b2ebf 34% 43%,transparent 43% 47%,#121b2ebf 47% 52%,transparent 52% 55%,#121b2ebf 55% 67%,transparent 67% 71%,#121b2ebf 71% 81%,transparent 81% 85%,#121b2ebf 85% 100%)}
-.scene-burst{position:absolute;left:15%;top:25%;width:30px;height:30px;animation:scene-firework 5s ease-out infinite;opacity:.8;filter:drop-shadow(0 0 12px #ffd58c)}
-.scene-burst:nth-child(2){left:74%;top:18%;animation-delay:-1.6s}
-.scene-burst:nth-child(3){left:62%;top:45%;animation-delay:-3.4s}
-.scene-burst:nth-child(4){left:34%;top:16%;animation-delay:-2.6s}
-.scene-burst:nth-child(5){left:88%;top:47%;animation-delay:-4.3s}
-.scene-burst:nth-child(6){left:5%;top:52%;animation-delay:-.6s}
-.scene-burst:nth-child(7){left:47%;top:30%;animation-delay:-3.1s}
-.scene-burst>b{position:absolute;top:0;left:14px;width:2px;height:28px;background:linear-gradient(#f9dc9d,transparent);border-radius:5px}
-.scene-burst>b:nth-child(2){transform:rotate(45deg)}
-.scene-burst>b:nth-child(3){transform:rotate(90deg)}
-.scene-burst>b:nth-child(4){transform:rotate(135deg)}
-@keyframes scene-firework{0%,72%,100%{transform:scale(.15);opacity:0}77%{opacity:.85}86%{transform:scale(1.3);opacity:1}96%{transform:scale(1.65);opacity:0}}
-[data-theme="patriotic"] .scene-burst:nth-child(2n)>b{background:linear-gradient(#ed5670,transparent)}
-[data-theme="patriotic"] .scene-burst:nth-child(3n)>b{background:linear-gradient(#d1e5ff,transparent)}
-@media(prefers-reduced-motion:reduce){.season-scene *, .season-scene *:before,.season-scene *:after{animation:none!important;transition:none!important}}
-
-
-/* Open-source Lucide SVG art replaces generic CSS blobs and triangle trees.
-   The scene remains decorative, locally hosted, with zero runtime network dependencies. */
-:is(.welcome-touch,.theme-stage) .scene-forest{position:absolute;inset:0;display:block;pointer-events:none}
-:is(.welcome-touch,.theme-stage) .scene-forest-tree{
- position:absolute;display:block;bottom:2%;width:22%;height:42%;
- background:url('/seasonal-assets/tree-pine.svg') center bottom/contain no-repeat;
- opacity:.8;filter:drop-shadow(0 4px 12px #0525226b)
-}
-.scene-forest-tree.forest-1{left:-4%;height:50%;opacity:.84}
-.scene-forest-tree.forest-2{left:8%;height:31%;opacity:.52}
-.scene-forest-tree.forest-3{left:21%;height:19%;opacity:.24}
-.scene-forest-tree.forest-4{right:-4%;height:52%;opacity:.86}
-.scene-forest-tree.forest-5{right:9%;height:34%;opacity:.58}
-.scene-forest-tree.forest-6{right:22%;height:20%;opacity:.25}
-[data-theme="winter"] .scene-forest-tree{filter:brightness(.76) hue-rotate(34deg) drop-shadow(0 5px 11px #071a3166)}
-[data-theme="winterlights"] .scene-forest-tree{filter:drop-shadow(0 1px 8px #8ee0a921)}
-/* Snowflakes: actual six-armed SVG crystals, not elongated drops or glowing bars. */
-:is(.welcome-touch,.theme-stage) .scene-snow{
- top:-12%;width:var(--flake-size)!important;height:var(--flake-size)!important;
- min-width:0;min-height:0;left:var(--x);
- border:0!important;border-radius:0!important;box-shadow:none!important;
- background:transparent url('/seasonal-assets/snowflake.svg') center/contain no-repeat!important;
- opacity:.73;filter:drop-shadow(0 0 1px #ffffff55);
- animation:scene-real-snow var(--speed) linear var(--delay) infinite!important;
- will-change:transform
-}
-:is(.welcome-touch,.theme-stage) .scene-snow:nth-child(3n){
- width:calc(var(--flake-size)*.63)!important;height:calc(var(--flake-size)*.63)!important;opacity:.44
-}
-@keyframes scene-real-snow{
- 0%{transform:translate3d(-8px,0,0) rotate(-14deg)}
- 50%{transform:translate3d(17px,57cqh,0) rotate(18deg)}
- 100%{transform:translate3d(var(--sway),125cqh,0) rotate(38deg)}
-}
-/* Vary foreground focus without warping icon shapes. */
-:is(.welcome-touch,.theme-stage) .scene-snow:nth-child(5n){opacity:.35;filter:blur(.6px)}
-:is(.welcome-touch,.theme-stage) .scene-leaf{
- width:var(--flake-size)!important;height:var(--flake-size)!important;
- border-radius:0!important;border:0!important;box-shadow:none!important;
- background:transparent url('/seasonal-assets/leaf.svg') center/contain no-repeat!important;
- filter:drop-shadow(0 0 3px #f8b45455)
-}
-:is(.welcome-touch,.theme-stage) .scene-petal{
- width:var(--flake-size)!important;height:var(--flake-size)!important;
- border:0!important;border-radius:0!important;box-shadow:none!important;
- background:transparent url('/seasonal-assets/flower-2.svg') center/contain no-repeat!important;
- opacity:.7
-}
-:is(.welcome-touch,.theme-stage) .scene-burst{
- width:clamp(30px,8cqw,74px);height:clamp(30px,8cqw,74px);
- background:transparent url('/seasonal-assets/sparkles.svg') center/contain no-repeat;
- filter:drop-shadow(0 0 8px #f9ce8477);transform-origin:center
-}
-:is(.welcome-touch,.theme-stage) .scene-burst>b{display:none}
-[data-theme="patriotic"] .scene-burst:nth-child(2n){filter:hue-rotate(95deg) drop-shadow(0 0 7px #c9e7ff)}
-[data-theme="patriotic"] .scene-burst:nth-child(3n){filter:hue-rotate(270deg) drop-shadow(0 0 7px #f09baa)}
-:is(.welcome-touch,.theme-stage) .scene-star{
- width:var(--flake-size);height:var(--flake-size);
- background:transparent url('/seasonal-assets/star.svg') center/contain no-repeat;
- border-radius:0;box-shadow:none
-}
-[data-theme="winterlights"] .scene-snowbank{background:linear-gradient(180deg,#e1efd22e,#5679591b)}
-/* Keep the visual treatment subdued behind the actual clock and button. */
-:is(.welcome-touch,.theme-stage) .season-scene{opacity:.86}
+.scene-bulb:nth-child(8){left:56%;top:86.36443966187528%}
+.scene-bulb:nth-child(9){left:64%;top:81.56921938165306%}
+.scene-bulb:nth-child(10){left:72%;top:73.94112549695429%}
+.scene-bulb:nth-child(11){left:80%;top:64%}
+.scene-bulb:nth-child(12){left:88%;top:52.42331416492101%}
+.scene-bulb:nth-child(13){left:96%;top:40.00000000000001%}
+@keyframes holiday-light-pulse{from{opacity:.45;transform:scale(.78)}to{opacity:1;transform:scale(1.12)}}
+/* Thanksgiving: a recognizable turkey, with varied red/amber/yellow foliage. */
+.holiday-thanksgiving-land{position:absolute;inset:auto -15% -15%;height:34%;background:radial-gradient(ellipse at 50% 100%,#ad713936,transparent 73%)}
+.holiday-turkey{position:absolute;right:5%;bottom:5%;width:clamp(90px,20cqw,220px);height:clamp(105px,32cqh,260px);background:url('/seasonal-assets/turkey.svg') center bottom/contain no-repeat;filter:drop-shadow(0 9px 24px #1e13147d);opacity:.88}
+.scene-leaf{width:var(--flake-size);height:var(--flake-size);background:url('/seasonal-assets/leaf.svg') center/contain no-repeat;animation:holiday-leaf-fall var(--speed) linear var(--delay) infinite}
+.scene-leaf.tone-0{filter:sepia(.75) saturate(2) hue-rotate(-17deg) brightness(1.25)}
+.scene-leaf.tone-1{filter:sepia(.5) saturate(2.5) hue-rotate(-36deg) brightness(1.08)}
+.scene-leaf.tone-2{filter:sepia(.9) saturate(1.7) hue-rotate(14deg) brightness(1.3)}
+.scene-leaf.tone-3{filter:sepia(.8) saturate(2) hue-rotate(-52deg) brightness(.94)}
+.scene-leaf.tone-4{filter:sepia(.7) saturate(1.3) hue-rotate(33deg) brightness(1.35)}
+@keyframes holiday-leaf-fall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(30px,58cqh,0) rotate(185deg)}100%{transform:translate3d(-25px,120cqh,0) rotate(375deg)}}
+/* New Year: actual decorative starburst fireworks, champagne light, no skyline blocks. */
+.holiday-city-haze{position:absolute;left:-10%;right:-10%;bottom:-10%;height:35%;background:radial-gradient(ellipse at 50% 100%,#d2b57e32,transparent 65%)}
+.holiday-bursts{position:absolute;inset:0}
+.holiday-burst{position:absolute;display:block;left:12%;top:18%;width:clamp(62px,16cqw,165px);aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(from 0deg,transparent 0deg 11deg,#eecf86 12deg 14deg,transparent 15deg 30deg);-webkit-mask:radial-gradient(circle,transparent 0 17%,#000 18% 78%,transparent 79%);mask:radial-gradient(circle,transparent 0 17%,#000 18% 78%,transparent 79%);filter:drop-shadow(0 0 12px #eecf86);opacity:.74;animation:holiday-firework 5.5s ease-in-out infinite}
+.holiday-burst.burst-2{left:70%;top:13%;width:clamp(62px,15cqw,155px);animation-delay:-1.6s}
+.holiday-burst.burst-3{left:75%;top:59%;width:clamp(38px,9cqw,98px);animation-delay:-3.1s}
+.holiday-burst.burst-4{left:8%;top:61%;width:clamp(39px,10cqw,105px);animation-delay:-4.3s}
+.holiday-burst.burst-5{left:54%;top:6%;width:clamp(36px,8cqw,90px);animation-delay:-2.5s}
+@keyframes holiday-firework{0%,100%{opacity:.28;transform:scale(.68) rotate(-8deg)}42%{opacity:.85;transform:scale(1.05) rotate(10deg)}72%{opacity:.4;transform:scale(.9) rotate(16deg)}}
+.holiday-gold-dust{position:absolute;inset:0;background-image:radial-gradient(circle,#fff2c7 0 1px,transparent 2px),radial-gradient(circle,#dbc18d 0 1px,transparent 2px);background-position:0 0,38px 62px;background-size:89px 113px,133px 151px;opacity:.36}
+.scene-gold{width:4px;height:4px;border-radius:50%;background:#fff0b8;box-shadow:0 0 11px 3px #f9d38d80;animation:holiday-shimmer var(--speed) ease-in-out var(--delay) infinite alternate;top:calc(15% + var(--x)/4)}
+@keyframes holiday-shimmer{from{opacity:.1;transform:translateY(9px) scale(.5)}to{opacity:.9;transform:translateY(-11px) scale(1.5)}}
+/* July Fourth: vintage flag bunting, ivory stars, muted red-white-blue accents. */
+.holiday-bunting{position:absolute;top:-1%;width:clamp(170px,31cqw,340px);height:clamp(94px,24cqh,215px);background:url('/seasonal-assets/americana-bunting.svg') center top/contain no-repeat;opacity:.94;filter:drop-shadow(0 9px 12px #071d3450)}
+.bunting-left{left:-5%;transform:rotate(-8deg)}
+.bunting-right{right:-5%;transform:rotate(8deg)}
+.holiday-flag-stars{position:absolute;inset:0;background-image:url('/seasonal-assets/star.svg');background-size:clamp(34px,7cqw,70px);opacity:.12;mask-image:linear-gradient(90deg,#000 0%,transparent 37%,transparent 63%,#000 100%)}
+[data-theme="fourth"] .holiday-burst{background:repeating-conic-gradient(from 0deg,transparent 0deg 10deg,#f8e7c7 11deg 13deg,transparent 14deg 30deg);opacity:.42}
+[data-theme="fourth"] .holiday-burst.burst-2,
+[data-theme="fourth"] .holiday-burst.burst-4{background:repeating-conic-gradient(from 0deg,transparent 0deg 11deg,#c95555 12deg 14deg,transparent 15deg 30deg)}
+.scene-star{width:var(--flake-size);height:var(--flake-size);background:url('/seasonal-assets/star.svg') center/contain no-repeat;opacity:.5;top:calc(12% + 15cqh);animation:holiday-shimmer var(--speed) ease-in-out var(--delay) infinite alternate}
+/* Accessibility, battery preservation and screenshots. */
 @media(prefers-reduced-motion:reduce){
- :is(.welcome-touch,.theme-stage) .season-scene *,
- :is(.welcome-touch,.theme-stage) .season-scene *::before,
- :is(.welcome-touch,.theme-stage) .season-scene *::after{animation:none!important;will-change:auto!important}
-}
-
-
-/* Specific seasonal illustrations using the same locally licensed SVG artwork. */
-:is(.welcome-touch,.theme-stage) .scene-harvest{
- bottom:3%;left:6%;width:23%;height:30%;display:block;
- background:transparent url('/seasonal-assets/wheat.svg') center bottom/contain no-repeat;
- opacity:.64;filter:drop-shadow(0 0 17px #edb56a38)
-}
-:is(.welcome-touch,.theme-stage) .scene-harvest i{display:none}
-:is(.welcome-touch,.theme-stage) .scene-moon{
- width:clamp(60px,15cqw,170px);height:auto;aspect-ratio:1;
- background:transparent url('/seasonal-assets/moon.svg') center/contain no-repeat;
- box-shadow:none;filter:drop-shadow(0 0 22px #f9ba6780);opacity:.8
-}
-:is(.welcome-touch,.theme-stage) .scene-sunset{
- width:clamp(60px,18cqw,190px);height:auto;aspect-ratio:1;
- background:transparent url('/seasonal-assets/sun.svg') center/contain no-repeat;
- box-shadow:none;filter:drop-shadow(0 0 26px #ffc16d77);opacity:.76
-}
-:is(.welcome-touch,.theme-stage) .scene-branch{
- width:28%;height:38%;right:0%;bottom:5%;transform:rotate(-12deg);
- border:0;border-radius:0;opacity:.5;
- background:transparent url('/seasonal-assets/flower-2.svg') center/contain no-repeat
-}
-:is(.welcome-touch,.theme-stage) .scene-bats i{
- background:transparent url('/seasonal-assets/ghost.svg') center/contain no-repeat;
- width:25px;height:25px;opacity:.65;box-shadow:none
+ .season-scene *,.season-scene *::before,.season-scene *::after{animation:none!important;transition:none!important}
 }
