@@ -75,7 +75,7 @@
 .holiday-burst.burst-5{left:54%;top:6%;width:clamp(36px,8cqw,90px);animation-delay:-2.5s}
 @keyframes holiday-firework{0%,100%{opacity:.28;transform:scale(.68) rotate(-8deg)}42%{opacity:.85;transform:scale(1.05) rotate(10deg)}72%{opacity:.4;transform:scale(.9) rotate(16deg)}}
 .holiday-gold-dust{position:absolute;inset:0;background-image:radial-gradient(circle,#fff2c7 0 1px,transparent 2px),radial-gradient(circle,#dbc18d 0 1px,transparent 2px);background-position:0 0,38px 62px;background-size:89px 113px,133px 151px;opacity:.36}
-.scene-gold{width:4px;height:4px;border-radius:50%;background:#fff0b8;box-shadow:0 0 11px 3px #f9d38d80;animation:holiday-shimmer var(--speed) ease-in-out var(--delay) infinite alternate;top:calc(15% + var(--x)/4)}
+.scene-gold{width:4px;height:4px;border-radius:50%;background:#fff0b8;box-shadow:0 0 11px 3px #f9d38d80;animation:holiday-shimmer var(--speed) ease-in-out var(--delay) infinite alternate;top:var(--x)}
 @keyframes holiday-shimmer{from{opacity:.1;transform:translateY(9px) scale(.5)}to{opacity:.9;transform:translateY(-11px) scale(1.5)}}
 /* July Fourth: vintage flag bunting, ivory stars, muted red-white-blue accents. */
 .holiday-bunting{position:absolute;top:-1%;width:clamp(170px,31cqw,340px);height:clamp(94px,24cqh,215px);background:url('/seasonal-assets/americana-bunting.svg') center top/contain no-repeat;opacity:.94;filter:drop-shadow(0 9px 12px #071d3450)}
