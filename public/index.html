@@ -424,6 +424,13 @@ body.employee-clocked-in{background:#d8f2e1}
 .signed-in-mode #app .session-controls .inactivity-label{font-size:12px;color:#7e8790}
 .signed-in-mode #app .session-controls #inactivity{margin-top:6px!important}
 @media(max-height:790px){.signed-in-mode .employee-greeting{margin-bottom:12px}.signed-in-mode .primary-zone{padding:16px 16px 15px}.signed-in-mode .status-line{margin-bottom:13px}.signed-in-mode .main-clock-button{min-height:75px}.signed-in-mode .daily-section{margin-top:15px}.signed-in-mode .clock-home .option-actions{margin-top:12px}.signed-in-mode .clock-home .option-button{min-height:62px}}
+/* Edge-to-edge clocked-in background; keep clock controls centered at existing width. */
+body.employee-clocked-in{
+ min-height:100svh;
+ background:linear-gradient(180deg,#c3ebd1 0%,#d8f2e1 54%,#e6f7ec 100%);
+ background-attachment:fixed;
+}
+main.signed-in-mode.clocked-in{background:transparent}
 </style></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
