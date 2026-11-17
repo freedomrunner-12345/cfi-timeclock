@@ -432,22 +432,6 @@ body.employee-clocked-in{
 }
 main.signed-in-mode.clocked-in{background:transparent}
 
-/* Seasonal looks affect only the idle welcome clock. */
-.welcome-touch[data-theme="winter"]{--scene:radial-gradient(ellipse at 52% 31%,#214d76 0%,#132e53 46%,#081426 100%);--halo:radial-gradient(circle,#8bd9ff95 0%,#5ba5e94d 40%,transparent 75%);--bloom:radial-gradient(circle,#ecf9ff78 0%,#91d7fa30 44%,transparent 72%);--accent:#9edcff}
-.welcome-touch[data-theme="spring"]{--scene:radial-gradient(ellipse at 54% 34%,#366b5a 0%,#234a42 49%,#142f32 100%);--halo:radial-gradient(circle,#ffbbad8c 0%,#e27d8660 40%,transparent 75%);--bloom:radial-gradient(circle,#b3f0b36c 0%,#6bbf8c32 48%,transparent 72%);--accent:#f5b8a4}
-.welcome-touch[data-theme="summer"]{--scene:radial-gradient(ellipse at 50% 33%,#155d76 0%,#093e59 46%,#10233e 100%);--halo:radial-gradient(circle,#ffb968a0 0%,#e982594a 45%,transparent 76%);--bloom:radial-gradient(circle,#69dde990 0%,#3f9faf30 45%,transparent 75%);--accent:#ffd193}
-.welcome-touch[data-theme="autumn"]{--scene:radial-gradient(ellipse at 53% 38%,#70432e 0%,#442b2a 50%,#201d27 100%);--halo:radial-gradient(circle,#f49c4c93 0%,#d66d3c54 41%,transparent 75%);--bloom:radial-gradient(circle,#e9be7770 0%,#ad693a28 46%,transparent 74%);--accent:#efaa68}
-.welcome-touch[data-theme="thanksgiving"]{--scene:radial-gradient(ellipse at 52% 36%,#805030 0%,#4b3528 46%,#29212a 100%);--halo:radial-gradient(circle,#df9b4e9c 0%,#b66c3356 42%,transparent 75%);--bloom:radial-gradient(circle,#f0d29c85 0%,#94714438 46%,transparent 75%);--accent:#ffd094}
-.welcome-touch[data-theme="halloween"]{--scene:radial-gradient(ellipse at 52% 36%,#4a275f 0%,#27203e 49%,#120e1f 100%);--halo:radial-gradient(circle,#ff8428aa 0%,#d1583462 40%,transparent 76%);--bloom:radial-gradient(circle,#b57fe57c 0%,#6d479c38 49%,transparent 74%);--accent:#ff9c43}
-.welcome-touch[data-theme="winterlights"]{--scene:radial-gradient(ellipse at 51% 37%,#24473c 0%,#18312f 45%,#0e1c25 100%);--halo:radial-gradient(circle,#f5c77da3 0%,#d29c5155 44%,transparent 76%);--bloom:radial-gradient(circle,#eaf8df8a 0%,#91c6a740 43%,transparent 74%);--accent:#f1cd94}
-.welcome-touch[data-theme="newyear"]{--scene:radial-gradient(ellipse at 48% 35%,#32395d 0%,#19233b 47%,#0a1022 100%);--halo:radial-gradient(circle,#edc47791 0%,#dba9504a 40%,transparent 75%);--bloom:radial-gradient(circle,#a7b3f46a 0%,#7e8dce28 48%,transparent 74%);--accent:#e8c77c}
-.welcome-touch[data-theme="patriotic"]{--scene:radial-gradient(ellipse at 50% 37%,#244a7f 0%,#1b315c 48%,#10182d 100%);--halo:radial-gradient(circle,#dd3c5693 0%,#b428495a 40%,transparent 75%);--bloom:radial-gradient(circle,#dfe8ff7d 0%,#a4bcff30 46%,transparent 73%);--accent:#e95b70}
-.welcome-touch[data-theme]:not([data-theme="classic"]){background:var(--scene)}
-.welcome-touch[data-theme]:not([data-theme="classic"])::after,
-.welcome-touch[data-theme]:not([data-theme="classic"]) .ambient-red{background:var(--halo)}
-.welcome-touch[data-theme]:not([data-theme="classic"])::before,
-.welcome-touch[data-theme]:not([data-theme="classic"]) .ambient-white{background:var(--bloom)}
-.welcome-touch[data-theme]:not([data-theme="classic"]) .welcome-rule{background:var(--accent);box-shadow:0 0 19px var(--accent)}
 </style><link rel="stylesheet" href="/seasonal-scenes.css"></head><body><main class="login-mode"><header class="top"><div class="brand"><span class="emblem-crop"><img src="/cfi-logo.png" alt="CFI Tire Service" class="real-logo"></span><span class="login-brand-caption">Time Clock</span></div></header><div id="app"></div><div id="sessionControls" class="session-controls hidden"><button id="signout" class="close hidden" type="button">Sign Out</button><div id="inactivity" class="inactivity-label hidden" aria-live="off">Automatic Sign Out In 1:00</div></div></main><div class="overlay hidden" id="overlay"></div><div class="toast hidden" id="toast"></div><script src="/seasonal-scenes.js"></script><script>
 const $=s=>document.getElementById(s),escapeHTML=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),fixed=n=>Number(n).toFixed(2),fmt=t=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(new Date(t)),day=d=>new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z'));
 let state=null,interval=null,keypadIdle=null,welcomeClockTimer=null;
