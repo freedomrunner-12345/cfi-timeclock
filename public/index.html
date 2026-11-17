@@ -736,7 +736,7 @@ function render(){
   +'<header class="employee-greeting"><div class="eyebrow">'+day(s.today).toUpperCase()+'</div><h1 class="hello">'+first+'</h1></header>'
   +'<section class="primary-zone" aria-label="Clock Status"><div class="status-line"><span class="entry-dot '+(on?'':'out')+'"></span>'+(on?'Clocked In':'Clocked Out')+'</div>'
   +'<button class="main-clock-button" id="punch" type="button"><span class="clock-arrow" aria-hidden="true">'+(on?'↑':'↓')+'</span>Clock '+(on?'Out':'In')+'</button>'
-  +(last?'<div class="last-punch">'+(on?'Since ':'Last out ')+fmt(last.at)+'</div>':'')+'</section>'
+  +(last?'<div class="last-punch">'+(on?'Since ':last.kind==='IN'?'Last in ':'Last out ')+fmt(last.at)+'</div>':'')+'</section>'
   +'<section class="daily-section" aria-label="Today’s Punches"><h2 class="quiet-heading">Today’s Punches</h2>'
   +(count?timeline+'<ul class="visually-hidden" aria-label="Punch times">'+accessiblePunches+'</ul>':'<div class="empty">No Punches Yet</div>')+'</section>'
   +'<div class="option-actions" aria-label="More Actions">'
