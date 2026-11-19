@@ -506,6 +506,8 @@ function setAppTheme(color){document.querySelector('meta[name="theme-color"]')?.
 // The original welcome screen stays untouched unless a saved theme is active.
 // Load holiday assets only when needed; one KV-backed request per welcome entry.
 let holidayAssetsPromise=null, lastWelcomeThemeDate='';
+const requestedPreviewTheme=new URLSearchParams(location.search).get('previewTheme');
+const previewTheme=['classic','thanksgiving','christmas','newyear','fourth'].includes(requestedPreviewTheme)?requestedPreviewTheme:null;
 const centralThemeDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'});
 function ensureHolidayAssets(){
  if(holidayAssetsPromise)return holidayAssetsPromise;
@@ -525,9 +527,7 @@ function ensureHolidayAssets(){
 async function refreshWelcomeTheme(touch){
  if(!touch)return;
  try{
-  const response=await fetch('/api/welcome-theme',{cache:'no-store'});
-  if(!response.ok)return; // Never block sign-in due to a theme error.
-  const data=await response.json();
+  const data=previewTheme?{theme:previewTheme}:await (async()=>{const response=await fetch('/api/welcome-theme',{cache:'no-store'});if(!response.ok)throw Error('Theme unavailable');return response.json()})();
   if(touch!==$('welcomeTouch')||!touch.isConnected)return;
   const theme=['thanksgiving','christmas','newyear','fourth'].includes(data.theme)?data.theme:'classic';
   if(theme==='classic'){
@@ -550,7 +550,8 @@ function welcome(){
  const main=document.querySelector('main');main.classList.remove('login-mode','signed-in-mode','clocked-in','clocked-out');main.classList.add('welcome-mode');document.body.classList.remove('employee-clocked-in');
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');close();
  $('app').innerHTML='<button id="welcomeTouch" class="welcome-touch" type="button" aria-label="Tap to Get Started"><span class="ambient ambient-red"></span><span class="ambient ambient-white"></span><span class="welcome-center"><strong>Time Clock</strong><i class="welcome-rule"></i><span class="welcome-clock"><span class="welcome-time" id="welcomeTime"></span><span class="welcome-date" id="welcomeDate"></span></span></span><span class="welcome-prompt">Tap to Get Started</span></button>';
- $('welcomeTouch').onclick=transitionToSignin;
+ $('welcomeTouch').onclick=previewTheme?()=>{}:transitionToSignin;
+ if(previewTheme)$('welcomeTouch').setAttribute('aria-label','Theme preview only');
  lastWelcomeThemeDate=centralThemeDay.format(new Date());
  startWelcomeClock();
  refreshWelcomeTheme($('welcomeTouch'));
@@ -869,5 +870,5 @@ function history(){
  const lines=dates.length?dates.map(d=>'<h3 class="section">'+day(d.date)+'</h3>'+d.punches.map(p=>'<div class="row"><span>'+(p.kind==='IN'?'Clock In':'Clock Out')+'</span><strong>'+fmt(p.at)+'</strong></div>').join('')).join(''):'<div class="info">No Punches Recorded This Week.</div>';
  modal('<h2>My Timecard</h2><p class="sub">'+day(s.monday)+' – '+day(s.sunday)+'</p>'+lines);
 }
-$('signout').onclick=()=>signOut(false);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});load();
+$('signout').onclick=()=>signOut(false);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});if(previewTheme)welcome();else load();
 </script></body></html>
