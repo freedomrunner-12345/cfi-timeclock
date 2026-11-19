@@ -13,10 +13,10 @@
  const glints='<span class="holiday-glints">'+Array.from({length:4},(_,i)=>'<i class="holiday-glint glint-'+(i+1)+'"></i>').join('')+'</span>';
  const scene={
   classic:'',
-  thanksgiving:'<span class="holiday-leaf-glow"></span><span class="holiday-turkey"></span>'+decorative(15,'scene-leaf'),
-  christmas:'<span class="holiday-snowbank"></span><span class="holiday-tree tree-left"></span><span class="holiday-tree tree-right"></span>'+lights+decorative(21,'scene-snow'),
-  newyear:'<span class="holiday-champagne-glow"></span><span class="holiday-party-popper"></span>'+glints+decorative(16,'scene-confetti'),
-  fourth:'<span class="holiday-flag"></span><span class="holiday-flag-halo"></span>'+glints+decorative(11,'scene-star')
+  thanksgiving:'',
+  christmas:'',
+  newyear:'',
+  fourth:'',
  };
  window.CFIThemeScene={
   ids:Object.keys(scene),
