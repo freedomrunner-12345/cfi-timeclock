@@ -258,9 +258,7 @@ function themePreviewStage(theme){
 }
 function showThemePreview(theme){
  const item=WELCOME_PRESETS.find(x=>x.id===theme);if(!item)return;
- // Purely local preview. The existing modal helper supplies exactly one Close button.
- pop('<div class="theme-preview-modal">'+themePreviewStage(item.id)
-  +'<h2 style="margin:14px 5px 0">'+item.name+'</h2><p class="muted" style="margin:5px">Preview only — no changes to the tablets.</p></div>');
+ window.open('/?previewTheme='+encodeURIComponent(item.id),'_blank','noopener');
 }
 async function drawThemeSettings(c){
  c.innerHTML='<section class="card"><h2>Welcome Screen Themes</h2><p class="muted">Classic CFI is the default. Additional themes show only when you explicitly activate one or enable a schedule.</p><div id="themeSettingsPanel">Loading…</div></section>';
