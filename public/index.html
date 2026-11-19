@@ -513,7 +513,7 @@ function ensureHolidayAssets(){
  if(holidayAssetsPromise)return holidayAssetsPromise;
  holidayAssetsPromise=new Promise((resolve,reject)=>{
   const stylesheet=document.createElement('link');
-  stylesheet.rel='stylesheet';stylesheet.href='/seasonal-scenes.css';
+  stylesheet.rel='stylesheet';stylesheet.href='/seasonal-scenes.css?v=photo27';
   stylesheet.onload=()=>{
    const script=document.createElement('script');script.src='/seasonal-scenes.js';
    script.onload=resolve;script.onerror=()=>reject(Error('Theme artwork unavailable'));
