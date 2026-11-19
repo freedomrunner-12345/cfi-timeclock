@@ -650,16 +650,16 @@ function signin(){
  clearInterval(interval);stopCountdown();state=null;
  $('signout').classList.add('hidden');$('sessionControls').classList.add('hidden');
  const keys=['1','2','3','4','5','6','7','8','9','C','0','⌫'];
- $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><div class="signin-methods" role="group" aria-label="Sign in using"><button type="button" class="signin-method active" data-method="birthdate" aria-pressed="true">Birthdate</button><button type="button" class="signin-method" data-method="id" aria-pressed="false">Paychex ID</button></div>'
+ $('app').innerHTML='<div class="card signin-card"><h2>Employee Sign In</h2><div class="signin-methods" role="group" aria-label="Sign in using"><button type="button" class="signin-method active" data-method="id" aria-pressed="true">Paychex ID</button><button type="button" class="signin-method" data-method="birthdate" aria-pressed="false">Birthdate</button></div>'
   +'<form id="login" autocomplete="off"><label class="field visually-hidden" for="id">Paychex Employee ID</label>'
   +'<input type="hidden" name="id" id="id">'
-  +'<output class="keypad-display hidden" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
-  +'<div id="birthdateFields" class="birthdate-fields" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YYYY</span></button></div><p id="yearTip" class="birthdate-year-tip">2-digit year works too</p>'
+  +'<output class="keypad-display" id="keypadDisplay" aria-label="Entered Paychex Employee ID" aria-live="polite">Enter Paychex Employee ID</output>'
+  +'<div id="birthdateFields" class="birthdate-fields hidden" role="group" aria-label="Date of birth"><button type="button" class="birthdate-field selected" data-part="month"><span class="field-caption">MONTH</span><span class="field-digits">MM</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="day"><span class="field-caption">DAY</span><span class="field-digits">DD</span></button><span class="birthdate-divider">/</span><button type="button" class="birthdate-field" data-part="year"><span class="field-caption">YEAR</span><span class="field-digits">YYYY</span></button></div><p id="yearTip" class="birthdate-year-tip hidden">2-digit year works too</p>'
   +'<div class="keypad" aria-label="Numeric Keypad">'+keys.map(key=>'<button type="button" class="keypad-key '+(key==="C"||key==="⌫"?"keypad-utility":"")+'" data-key="'+key+'" aria-label="'+(key==="C"?"Clear":key==="⌫"?"Backspace":key)+'">'+key+'</button>').join('')+'</div>'
   +'<button class="primary keypad-submit" id="keypadSubmit" disabled type="button">Sign In</button><div id="loginError" class="login-error hidden" role="alert"></div></form></div><div class="questions-signin">'+questionsLink()+'</div><button type="button" id="refreshTimeclock" class="signin-refresh" aria-label="Refresh Time Clock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span>Refresh</span></button>';
  wireQuestions();
  $('refreshTimeclock').onclick=()=>window.location.reload();
- let signinMethod='birthdate';
+ let signinMethod='id';
  const id=$('id'),display=$('keypadDisplay'),submit=$('keypadSubmit');
  const birthFields=$('birthdateFields');
  const dob={month:'',day:'',year:''};
