@@ -152,7 +152,7 @@ export class Timeclock {
         const plan=await this.ctx.storage.get('welcome_theme_plan_v2');
         const images=await this.ctx.storage.get('welcome_theme_images_v1')||{};
         const theme=activeWelcomeTheme(plan);
-        return json({theme,image:images[theme]||null});
+        return json({theme,image:images[theme]?{kind:images[theme].kind,url:images[theme].kind==='url'?images[theme].url:'/api/theme-image/'+theme+'?v='+images[theme].version}:null,images:Object.fromEntries(['thanksgiving','christmas','newyear','fourth'].map(t=>[t,images[t]?{kind:images[t].kind,url:images[t].kind==='url'?images[t].url:'/api/theme-image/'+t+'?v='+images[t].version}:null]))});
       }
       if (route.startsWith('/api/theme-image/') && req.method === 'GET') {
         const theme=route.slice('/api/theme-image/'.length);
