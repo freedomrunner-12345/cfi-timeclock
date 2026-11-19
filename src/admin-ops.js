@@ -26,10 +26,56 @@ export async function adminOps(store,request){
   const filename='cfi-full-punch-backup-'+store.date(new Date().toISOString())+'.csv';
   return new Response('\ufeff'+rows.join('\r\n')+'\r\n',{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="'+filename+'"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
  }
+ const customThemes=['thanksgiving','christmas','newyear','fourth'];
+ const imageMetadata=async()=>{
+  const saved=await store.ctx.storage.get('welcome_theme_images_v1')||{};
+  return Object.fromEntries(customThemes.map(theme=>{
+   const item=saved[theme];
+   return [theme,item?{kind:item.kind,url:item.kind==='url'?item.url:'/api/theme-image/'+theme+'?v='+item.version,version:item.version}:null];
+  }));
+ };
+ if(route==='/api/admin/theme-image' && method==='POST'){
+  const body=await request.json().catch(()=>null);
+  const theme=body?.theme;
+  if(!customThemes.includes(theme))return error('Select a holiday theme.');
+  const mode=body?.action;
+  const images=await store.ctx.storage.get('welcome_theme_images_v1')||{};
+  if(mode==='restore'){
+   delete images[theme];
+   await store.ctx.storage.delete('welcome_theme_upload_'+theme);
+  }else if(mode==='url'){
+   let imageUrl;
+   try{
+    const input=new URL(String(body.url||'').trim());
+    if(input.protocol!=='https:')throw Error('Use an HTTPS Pexels photo link.');
+    if(input.hostname==='www.pexels.com'||input.hostname==='pexels.com'){
+     const match=input.pathname.match(/^\/photo\/(?:[^/]*-)?(\d+)\/?$/);
+     if(!match)throw Error('Paste a link to an individual Pexels photograph.');
+     const id=match[1];
+     imageUrl='https://images.pexels.com/photos/'+id+'/pexels-photo-'+id+'.jpeg?auto=compress&cs=tinysrgb&w=2200';
+    }else if(input.hostname==='images.pexels.com'){
+     if(!/^\/photos\/\d+\/pexels-photo-\d+\.jpeg$/i.test(input.pathname))throw Error('Use a Pexels photograph URL.');
+     imageUrl=input.origin+input.pathname+'?auto=compress&cs=tinysrgb&w=2200';
+    }else throw Error('Only Pexels photo links are supported.');
+   }catch(e){return error(e.message||'Invalid Pexels URL.')}
+   images[theme]={kind:'url',url:imageUrl,version:Date.now()};
+   await store.ctx.storage.delete('welcome_theme_upload_'+theme);
+  }else if(mode==='upload'){
+   const base64=String(body.base64||'');
+   if(base64.length>1400000||!base64||!/^[A-Za-z0-9+/]+={0,2}$/.test(base64))return error('Upload is too large; choose an image under 1 MB after compression.');
+   let bytes;
+   try{bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0))}catch(e){return error('Invalid image data.')}
+   if(bytes.length>1048576||bytes.length<128||bytes[0]!==82||bytes[1]!==73||bytes[2]!==70||bytes[3]!==70||bytes[8]!==87||bytes[9]!==69||bytes[10]!==66||bytes[11]!==80)return error('Upload a valid compressed WebP image under 1 MB.');
+   await store.ctx.storage.put('welcome_theme_upload_'+theme,{mime:'image/webp',base64});
+   images[theme]={kind:'upload',version:Date.now()};
+  }else return error('Choose a supported image action.');
+  await store.ctx.storage.put('welcome_theme_images_v1',images);
+  return result({ok:true,images:await imageMetadata()});
+ }
  if(route==='/api/admin/welcome-theme'){
   if(method==='GET'){
    const plan=normalizeWelcomePlan(await store.ctx.storage.get('welcome_theme_plan_v2'));
-   return result({plan,activeTheme:activeWelcomeTheme(plan),options:WELCOME_THEMES});
+   return result({plan,activeTheme:activeWelcomeTheme(plan),options:WELCOME_THEMES,images:await imageMetadata()});
   }
   if(method==='POST'){
    const submitted=await request.json();
