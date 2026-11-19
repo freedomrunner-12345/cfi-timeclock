@@ -527,7 +527,14 @@ function ensureHolidayAssets(){
 async function refreshWelcomeTheme(touch){
  if(!touch)return;
  try{
-  const data=previewTheme?{theme:previewTheme}:await (async()=>{const response=await fetch('/api/welcome-theme',{cache:'no-store'});if(!response.ok)throw Error('Theme unavailable');return response.json()})();
+  const response=await fetch('/api/welcome-theme',{cache:'no-store'});
+  if(!response.ok)throw Error('Theme unavailable');
+  const saved=await response.json();
+  const data={theme:previewTheme||saved.theme,image:previewTheme?(saved.images?.[previewTheme]||null):saved.image};
+  if(previewTheme){
+   const overrides=await fetch('/api/theme-image-settings',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+   data.image=overrides?.images?.[previewTheme]||null;
+  }
   if(touch!==$('welcomeTouch')||!touch.isConnected)return;
   const theme=['thanksgiving','christmas','newyear','fourth'].includes(data.theme)?data.theme:'classic';
   if(theme==='classic'){
@@ -538,6 +545,13 @@ async function refreshWelcomeTheme(touch){
   await ensureHolidayAssets();
   if(touch!==$('welcomeTouch')||!touch.isConnected||!window.CFIThemeScene)return;
   touch.dataset.theme=theme;
+  touch.style.removeProperty('background-image');
+  if(data.image?.url){
+   const url=String(data.image.url);
+   if(url.startsWith('https://images.pexels.com/photos/')||url.startsWith('/api/theme-image/')){
+    touch.style.setProperty('background-image','url("'+url.replace(/"/g,'%22')+'")','important');
+   }
+  }
   const markup=window.CFIThemeScene.markup(theme);
   const existing=touch.querySelector('.season-scene');
   if(existing)existing.outerHTML=markup;
