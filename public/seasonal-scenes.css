@@ -24,29 +24,42 @@
 :is(.welcome-touch,.theme-stage)[data-theme="thanksgiving"]{
   --accent:#e5b57b;
   background-color:#281820!important;
-  background-image:url('/seasonal-assets/thanksgiving-landscape.webp')!important;
+  background-image:url('https://images.pexels.com/photos/36720290/pexels-photo-36720290.jpeg?auto=compress&cs=tinysrgb&w=2000')!important;
 }
 :is(.welcome-touch,.theme-stage)[data-theme="christmas"]{
   --accent:#e9ca90;
   background-color:#0b2822!important;
-  background-image:url('/seasonal-assets/christmas-landscape.webp')!important;
+  background-image:url('https://images.pexels.com/photos/13541897/pexels-photo-13541897.jpeg?auto=compress&cs=tinysrgb&w=2000')!important;
 }
 :is(.welcome-touch,.theme-stage)[data-theme="newyear"]{
   --accent:#e4c48c;
   background-color:#0d192b!important;
-  background-image:url('/seasonal-assets/newyear-landscape.webp')!important;
+  background-image:url('https://images.pexels.com/photos/19118854/pexels-photo-19118854.jpeg?auto=compress&cs=tinysrgb&w=2000')!important;
 }
 :is(.welcome-touch,.theme-stage)[data-theme="fourth"]{
   --accent:#e8d6bb;
   background-color:#112946!important;
-  background-image:url('/seasonal-assets/fourth-landscape.webp')!important;
+  background-image:url('https://images.pexels.com/photos/9726894/pexels-photo-9726894.jpeg?auto=compress&cs=tinysrgb&w=2000')!important;
 }
+/* These source photographs are native 2:3 portrait. Scale proportionally, never stretch. */
 @media (orientation:portrait){
-  .welcome-touch[data-theme="thanksgiving"]{background-image:url('/seasonal-assets/thanksgiving-portrait.webp')!important}
-  .welcome-touch[data-theme="christmas"]{background-image:url('/seasonal-assets/christmas-portrait.webp')!important}
-  .welcome-touch[data-theme="newyear"]{background-image:url('/seasonal-assets/newyear-portrait.webp')!important}
-  .welcome-touch[data-theme="fourth"]{background-image:url('/seasonal-assets/fourth-portrait.webp')!important}
+ .welcome-touch[data-theme="thanksgiving"]{background-position:center center!important;background-size:cover!important}
+ .welcome-touch[data-theme="christmas"]{background-position:center center!important;background-size:cover!important}
+ .welcome-touch[data-theme="newyear"]{background-position:center center!important;background-size:cover!important}
+ .welcome-touch[data-theme="fourth"]{background-position:center center!important;background-size:cover!important}
 }
+/* Lightweight, reduced-motion-safe ambient glow; no particles or bogus holiday icons. */
+@keyframes cfi-holiday-ambient{from{opacity:.06}to{opacity:.17}}
+.welcome-touch[data-theme="thanksgiving"]::after,
+.welcome-touch[data-theme="christmas"]::after,
+.welcome-touch[data-theme="newyear"]::after,
+.welcome-touch[data-theme="fourth"]::after{
+ content:"";display:block!important;position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:radial-gradient(ellipse at 83% 14%,rgba(255,225,170,.32),transparent 62%);
+ animation:cfi-holiday-ambient 12s ease-in-out infinite alternate
+}
+@media(prefers-reduced-motion:reduce){.welcome-touch[data-theme]::after{animation:none!important;opacity:.08!important}}
+
 /* Admin gallery always shows the landscape version in its widescreen cards. */
 .theme-stage[data-theme]{background-position:center center!important;background-size:cover!important}
 :is(.welcome-touch,.theme-stage){isolation:isolate;overflow:hidden}
@@ -61,3 +74,9 @@
 .theme-stage[data-theme]:not([data-theme="classic"]) .preview-rule{
   background:var(--accent)!important;box-shadow:0 0 13px #ffffff26
 }
+
+/* Keep center lettering readable over photography without changing fonts. */
+.welcome-touch[data-theme="thanksgiving"],
+.welcome-touch[data-theme="christmas"],
+.welcome-touch[data-theme="newyear"],
+.welcome-touch[data-theme="fourth"]{background-size:cover!important;background-repeat:no-repeat!important}
