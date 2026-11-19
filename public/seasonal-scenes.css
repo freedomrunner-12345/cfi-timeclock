@@ -191,3 +191,10 @@
   animation:none!important;transition:none!important;will-change:auto!important
  }
 }
+
+/* Premium holiday backgrounds. Existing clock fonts, hierarchy and positions remain. */
+:is(.welcome-touch,.theme-stage)[data-theme="thanksgiving"]{--accent:#ddb482;background:#24171c url('/seasonal-assets/thanksgiving-premium.svg') center/cover no-repeat!important}
+:is(.welcome-touch,.theme-stage)[data-theme="christmas"]{--accent:#ead29c;background:#0c2d27 url('/seasonal-assets/christmas-premium.svg') center/cover no-repeat!important}
+:is(.welcome-touch,.theme-stage)[data-theme="newyear"]{--accent:#dfbc85;background:#0c1829 url('/seasonal-assets/newyear-premium.svg') center/cover no-repeat!important}
+:is(.welcome-touch,.theme-stage)[data-theme="fourth"]{--accent:#ead7bf;background:#0c203b url('/seasonal-assets/fourth-premium.svg') center/cover no-repeat!important}
+:is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .season-scene{display:none!important}
