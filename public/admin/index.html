@@ -175,6 +175,15 @@ details[open]>summary.timecard-section-head:before{content:'▾'}
 .theme-save-bar{display:flex;align-items:center;gap:13px;justify-content:space-between;margin-top:18px;flex-wrap:wrap}
 .theme-save-bar .muted{font-size:13px}
 @media(max-width:680px){.theme-date-row{grid-template-columns:1fr 1fr}.theme-date-name{grid-column:1/-1}.theme-date-row .repeat{grid-column:1/-1}.theme-gallery{grid-template-columns:1fr}}
+.theme-image-options{margin-top:12px;padding-top:12px;border-top:1px solid #e9eaf0;display:flex;flex-direction:column;gap:8px}
+.theme-image-status{font-size:13px;color:#71737d;font-weight:700}
+.theme-image-label{font-size:13px;font-weight:700;color:#646772}
+.theme-image-link{margin:0!important;font-size:14px!important;min-height:43px!important;padding:8px 10px!important}
+.theme-image-use{font-size:14px;min-height:42px}
+.theme-image-secondary{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.theme-image-secondary .btn{min-width:0;padding:8px 5px;font-size:13px;min-height:43px;text-align:center}
+.theme-upload-label{display:flex;align-items:center;justify-content:center;cursor:pointer}
+@media(max-width:480px){.theme-image-secondary{grid-template-columns:1fr 1fr}}
 </style><link rel="stylesheet" href="/seasonal-scenes.css?v=photo27"></head><body><main><header class="top"><div class="brand"><span class="logo">◷</span><span>CFI <span class="muted">admin</span></span></div><button id="logout" class="btn outline hidden">Sign out</button></header><div id="app"></div><div class="footer">CFI Time Clock · Administrator</div></main><div id="overlay" class="overlay hidden"></div><div id="toast" class="toast hidden"></div><script src="/admin/smart-entry.js"></script><script src="/seasonal-scenes.js"></script><script>
 const $=x=>document.getElementById(x),safe=v=>String(v??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k])),fix=v=>Number(v).toFixed(2);
 let state=null,week=null,tab='overview',quickDraft=null;
@@ -242,8 +251,43 @@ const WELCOME_PRESETS=[
  {id:'newyear',name:'New Year'},
  {id:'fourth',name:'Fourth of July'}
 ];
-let themePlan=null,themeActive='classic';
+let themePlan=null,themeActive='classic',themeImages={};
 const themeName=id=>WELCOME_PRESETS.find(x=>x.id===id)?.name||'Classic CFI';
+function applyThemeImagePreview(panel){
+ panel.querySelectorAll('.theme-stage[data-theme]').forEach(stage=>{
+  const custom=themeImages[stage.dataset.theme];
+  if(custom?.url)stage.style.setProperty('background-image','url("'+custom.url.replace(/"/g,'%22')+'")','important');
+ });
+}
+async function saveHolidayImage(theme,action,payload={}){
+ const data=await api('theme-image',{theme,action,...payload});
+ themeImages=data.images||{};
+ if(tab==='themes'&&$('content'))renderThemeSettings($('content'));
+ alertUser(action==='restore'?'Default '+themeName(theme)+' image restored.':'Custom '+themeName(theme)+' image saved.');
+}
+async function encodeHolidayUpload(file){
+ if(!file||!file.type.startsWith('image/'))throw Error('Select a photograph (JPG, PNG, or WebP).');
+ if(file.size>18000000)throw Error('Select an image smaller than 18 MB.');
+ const image=await new Promise((resolve,reject)=>{
+  const source=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{URL.revokeObjectURL(source);resolve(img)};
+  img.onerror=()=>{URL.revokeObjectURL(source);reject(Error('Unable to open image.'))};
+  img.src=source;
+ });
+ if(image.naturalWidth<650||image.naturalHeight<900)throw Error('Choose a higher-resolution portrait photograph.');
+ if(image.naturalWidth>image.naturalHeight)throw Error('Choose a portrait-oriented photograph.');
+ let scale=Math.min(1,1800/image.naturalWidth,2600/image.naturalHeight),blob=null;
+ for(const quality of [.87,.78,.67,.56,.45]){
+  const canvas=document.createElement('canvas');canvas.width=Math.round(image.naturalWidth*scale);canvas.height=Math.round(image.naturalHeight*scale);
+  canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+  blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',quality));
+  if(blob&&blob.type==='image/webp'&&blob.size<=1020000)break;
+  scale*=.83;
+ }
+ if(!blob||blob.type!=='image/webp'||blob.size>1020000)throw Error('The photo cannot be compressed to the upload limit. Try another image.');
+ const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('Could not read image.'));reader.readAsDataURL(blob)});
+ return dataUrl.split(',')[1];
+}
 const themeClockText=()=>({
  time:new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date()),
  date:new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',month:'long',day:'numeric',weekday:'long'}).format(new Date())
@@ -265,7 +309,7 @@ async function drawThemeSettings(c){
  try{
   const result=await api('welcome-theme');
   if(tab!=='themes'||!c.isConnected)return;
-  themePlan=result.plan;themeActive=result.activeTheme;
+  themePlan=result.plan;themeActive=result.activeTheme;themeImages=result.images||{};
   renderThemeSettings(c);
  }catch(e){if(tab==='themes'&&c.querySelector('#themeSettingsPanel'))c.querySelector('#themeSettingsPanel').textContent='Unable to load themes: '+e.message}
 }
@@ -297,7 +341,14 @@ function renderThemeSettings(c){
   +'<div class="theme-gallery">'+WELCOME_PRESETS.map(item=>'<div class="theme-tile">'+themePreviewStage(item.id)
    +'<div class="theme-tile-name"><b>'+item.name+'</b>'+(item.id===themeActive?'<span class="theme-active-badge">Active</span>':'')+'</div>'
    +'<div class="theme-tile-actions"><button type="button" class="btn outline" data-theme-preview="'+item.id+'">Preview</button>'
-   +'<button type="button" class="btn '+(item.id===themeActive?'outline':'red')+'" data-theme-now="'+item.id+'">'+(item.id===themeActive?'Showing':'Show Now')+'</button></div></div>').join('')+'</div>'
+   +'<button type="button" class="btn '+(item.id===themeActive?'outline':'red')+'" data-theme-now="'+item.id+'">'+(item.id===themeActive?'Showing':'Show Now')+'</button></div>'
+   +(item.id==='classic'?'':'<div class="theme-image-options" data-holiday-image="'+item.id+'">'
+   +'<div class="theme-image-status">'+(themeImages[item.id]?'Custom image':'Default photo')+'</div>'
+   +'<label class="theme-image-label">Pexels photo URL</label><input class="theme-image-link input" type="url" placeholder="Paste a Pexels photo link" autocomplete="off" value="'+(themeImages[item.id]?.kind==='url'?safe(themeImages[item.id].url):'')+'">'
+   +'<button type="button" class="btn outline theme-image-use" data-image-use="'+item.id+'">Use Link</button>'
+   +'<div class="theme-image-secondary"><label class="btn outline theme-upload-label">Upload Image<input type="file" accept="image/png,image/jpeg,image/webp" data-image-upload="'+item.id+'" hidden></label>'
+   +'<button type="button" class="btn outline" data-image-restore="'+item.id+'">Restore Default</button></div></div>')
+   +'</div>').join('')+'</div>'
   +'<div class="card" style="margin:15px 0 0"><h2>Schedule Holiday Themes</h2>'
   +'<p class="muted">Choose the exact dates you want. Dates are inclusive and use Central Time. Leave both dates blank for a holiday you do not want scheduled.</p>'
   +'<form id="themeScheduleForm"><div class="theme-date-grid">'+WELCOME_PRESETS.filter(x=>x.id!=='classic').map(dateRow).join('')+'</div>'
@@ -305,6 +356,26 @@ function renderThemeSettings(c){
   +'<button type="submit" class="btn red">Save Dates</button></div></form></div>';
  panel.querySelector('#themeClassicMode').onclick=async()=>{try{await saveThemePlan({...themePlan,mode:'classic',theme:'classic'},'Classic CFI restored.')}catch(e){alertUser(e.message)}};
  panel.querySelector('#themeScheduledMode').onclick=async()=>{try{await saveThemePlan({...themePlan,mode:'scheduled'},'Holiday schedule enabled.')}catch(e){alertUser(e.message)}};
+ applyThemeImagePreview(panel);
+ panel.querySelectorAll('[data-image-use]').forEach(button=>button.onclick=async()=>{
+  const theme=button.dataset.imageUse,field=panel.querySelector('[data-holiday-image="'+theme+'"] .theme-image-link');
+  if(!field.value.trim()){alertUser('Paste a Pexels photo URL.');return}
+  button.disabled=true;
+  try{await saveHolidayImage(theme,'url',{url:field.value.trim()})}catch(e){alertUser(e.message);button.disabled=false}
+ });
+ panel.querySelectorAll('[data-image-upload]').forEach(input=>input.onchange=async()=>{
+  const theme=input.dataset.imageUpload;
+  if(!input.files?.[0])return;
+  input.disabled=true;
+  try{
+   const base64=await encodeHolidayUpload(input.files[0]);
+   await saveHolidayImage(theme,'upload',{base64});
+  }catch(e){alertUser(e.message);input.disabled=false}
+ });
+ panel.querySelectorAll('[data-image-restore]').forEach(button=>button.onclick=async()=>{
+  button.disabled=true;
+  try{await saveHolidayImage(button.dataset.imageRestore,'restore')}catch(e){alertUser(e.message);button.disabled=false}
+ });
  panel.querySelectorAll('[data-theme-preview]').forEach(b=>b.onclick=()=>showThemePreview(b.dataset.themePreview));
  panel.querySelectorAll('[data-theme-now]').forEach(b=>b.onclick=async()=>{
   const chosen=b.dataset.themeNow;
