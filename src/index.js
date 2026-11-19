@@ -150,7 +150,19 @@ export class Timeclock {
       if (route === '/api/config') return json({ pilot: true });
       if (route === '/api/welcome-theme' && req.method === 'GET') {
         const plan=await this.ctx.storage.get('welcome_theme_plan_v2');
-        return json({theme:activeWelcomeTheme(plan)});
+        const images=await this.ctx.storage.get('welcome_theme_images_v1')||{};
+        const theme=activeWelcomeTheme(plan);
+        return json({theme,image:images[theme]||null});
+      }
+      if (route.startsWith('/api/theme-image/') && req.method === 'GET') {
+        const theme=route.slice('/api/theme-image/'.length);
+        if (!['thanksgiving','christmas','newyear','fourth'].includes(theme))return fail('Not found',404);
+        const images=await this.ctx.storage.get('welcome_theme_images_v1')||{};
+        if(images[theme]?.kind!=='upload')return fail('Not found',404);
+        const stored=await this.ctx.storage.get('welcome_theme_upload_'+theme);
+        if(!stored?.base64 || stored.mime!=='image/webp')return fail('Not found',404);
+        const bytes=Uint8Array.from(atob(stored.base64),c=>c.charCodeAt(0));
+        return new Response(bytes,{headers:{'Content-Type':'image/webp','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
       }
       if (route === '/api/login' && req.method === 'POST') {
         const data = await req.json();
