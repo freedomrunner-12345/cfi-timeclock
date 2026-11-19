@@ -198,3 +198,25 @@
 :is(.welcome-touch,.theme-stage)[data-theme="newyear"]{--accent:#dfbc85;background:#0c1829 url('/seasonal-assets/newyear-premium.svg') center/cover no-repeat!important}
 :is(.welcome-touch,.theme-stage)[data-theme="fourth"]{--accent:#ead7bf;background:#0c203b url('/seasonal-assets/fourth-premium.svg') center/cover no-repeat!important}
 :is(.welcome-touch,.theme-stage)[data-theme]:not([data-theme="classic"]) .season-scene{display:none!important}
+
+/* Device-fitted compositions for actual welcome screen, not viewport-cropped 16:9 art.
+   Landscape (desktop and horizontal tablets): use the complete wide artwork.
+   Portrait (phones and vertical tablets): use independently composed tall artwork.
+   Stretching each vector to the exact device frame keeps seasonal details visible;
+   no important art lives outside the visible screen. */
+.welcome-touch[data-theme="thanksgiving"],
+.welcome-touch[data-theme="christmas"],
+.welcome-touch[data-theme="newyear"],
+.welcome-touch[data-theme="fourth"]{background-size:100% 100%!important;background-position:center!important}
+@media (orientation:portrait){
+ .welcome-touch[data-theme="thanksgiving"]{background-image:url('/seasonal-assets/thanksgiving-portrait.svg')!important}
+ .welcome-touch[data-theme="christmas"]{background-image:url('/seasonal-assets/christmas-portrait.svg')!important}
+ .welcome-touch[data-theme="newyear"]{background-image:url('/seasonal-assets/newyear-portrait.svg')!important}
+ .welcome-touch[data-theme="fourth"]{background-image:url('/seasonal-assets/fourth-portrait.svg')!important}
+}
+/* The admin's small 16:9 tiles continue using the landscape-specific version,
+   even when the administrator is viewing the gallery on a portrait phone. */
+.theme-stage[data-theme="thanksgiving"],
+.theme-stage[data-theme="christmas"],
+.theme-stage[data-theme="newyear"],
+.theme-stage[data-theme="fourth"]{background-size:100% 100%!important}
