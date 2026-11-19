@@ -531,10 +531,7 @@ async function refreshWelcomeTheme(touch){
   if(!response.ok)throw Error('Theme unavailable');
   const saved=await response.json();
   const data={theme:previewTheme||saved.theme,image:previewTheme?(saved.images?.[previewTheme]||null):saved.image};
-  if(previewTheme){
-   const overrides=await fetch('/api/theme-image-settings',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
-   data.image=overrides?.images?.[previewTheme]||null;
-  }
+
   if(touch!==$('welcomeTouch')||!touch.isConnected)return;
   const theme=['thanksgiving','christmas','newyear','fourth'].includes(data.theme)?data.theme:'classic';
   if(theme==='classic'){
